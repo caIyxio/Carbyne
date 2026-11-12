@@ -1,0 +1,88 @@
+name: Website — GitHub build and Netlify deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/source-bundle/**'
+      - 'site/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/website.yml'
+  pull_request:
+    paths:
+      - '.github/source-bundle/**'
+      - 'site/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/website.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: carbyne-website-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and validate website
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Reassemble and extract project sources
+        run: |
+          cat .github/source-bundle/part-*.b64 | base64 --decode > "$RUNNER_TEMP/carbyne-project-source.tar.gz"
+          tar -xzf "$RUNNER_TEMP/carbyne-project-source.tar.gz" -C .
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate website source
+        run: npm run validate
+      - name: Build static site on GitHub Actions
+        run: npm run build
+      - name: Upload prebuilt site
+        uses: actions/upload-artifact@v4
+        with:
+          name: carbyne-website-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  deploy-production:
+    name: Deploy prebuilt files to Netlify production
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Download prebuilt site
+        uses: actions/download-artifact@v4
+        with:
+          name: carbyne-website-dist
+          path: dist
+      - name: Check deployment secrets
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN" || { echo 'Missing NETLIFY_AUTH_TOKEN repository/environment secret.'; exit 1; }
+          test -n "$NETLIFY_SITE_ID" || { echo 'Missing NETLIFY_SITE_ID repository/environment secret.'; exit 1; }
+      - name: Deploy already-built output (no Netlify build)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          npx --yes netlify-cli@latest deploy \
+            --dir=dist \
+            --prod \
+            --site="$NETLIFY_SITE_ID" \
+            --message="GitHub Actions ${GITHUB_SHA}"
