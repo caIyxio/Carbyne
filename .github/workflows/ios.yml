@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - '.github/source-bundle/**'
+      - '.github/scripts/**'
       - 'ios/**'
       - '.github/workflows/ios.yml'
   pull_request:
     paths:
       - '.github/source-bundle/**'
+      - '.github/scripts/**'
       - 'ios/**'
       - '.github/workflows/ios.yml'
   workflow_dispatch:
@@ -32,6 +34,8 @@ jobs:
         run: |
           cat .github/source-bundle/part-*.b64 | base64 --decode > "$RUNNER_TEMP/carbyne-project-source.tar.gz"
           tar -xzf "$RUNNER_TEMP/carbyne-project-source.tar.gz" -C .
+      - name: Apply Supabase Swift SDK storage compatibility patch
+        run: python3 .github/scripts/patch-supabase-storage-api.py
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
       - name: Install XcodeGen

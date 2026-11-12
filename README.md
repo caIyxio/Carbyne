@@ -17,6 +17,14 @@ The workflow intentionally fails before deployment if either secret is missing. 
 
 The native SwiftUI project is under `ios/Carbyne/` after extracting the source bundle. It uses the existing Carbyne Supabase project and the public publishable key already used by the website. Auth sessions use the iOS Keychain through Supabase's Swift SDK.
 
+The iOS workflow applies `.github/scripts/patch-supabase-storage-api.py` after extracting the bundle so the avatar/banner upload calls match the pinned Supabase Swift 2.55.x Storage API. When unpacking locally, apply the same compatibility patch before opening the Xcode project:
+
+```sh
+cat .github/source-bundle/part-*.b64 | base64 --decode > /tmp/carbyne-project-source.tar.gz
+tar -xzf /tmp/carbyne-project-source.tar.gz -C .
+python3 .github/scripts/patch-supabase-storage-api.py
+```
+
 On GitHub Actions, the iOS workflow runs XcodeGen and Xcode on a macOS runner, compiles for a generic iOS device without code signing, packages the resulting app as `Carbyne-unsigned.ipa`, and uploads it as the `Carbyne-unsigned-IPA` workflow artifact. The IPA is deliberately unsigned; it must be signed with a sideloading tool and a device-compatible provisioning profile before it can be installed on an iPhone.
 
 ## Backend scope discovered during the port
@@ -27,11 +35,6 @@ There is currently no conversations/messages table, posts/video table, or video 
 
 ## Source bundle
 
-The compressed source bundle is stored as ordered text chunks so it can be committed through GitHub's text-file API without altering the original bytes. To unpack it locally from the repository root:
-
-```sh
-cat .github/source-bundle/part-*.b64 | base64 --decode > /tmp/carbyne-project-source.tar.gz
-tar -xzf /tmp/carbyne-project-source.tar.gz -C .
-```
+The compressed source bundle is stored as ordered text chunks so it can be committed through GitHub's text-file API without altering the original bytes. To unpack it locally from the repository root, use the commands above.
 
 The `Carbyne.png` logo mentioned in the project brief was not present in the supplied ZIP or the repository's original `main` tree, so the app currently uses a native text wordmark rather than substituting an unrelated image.
