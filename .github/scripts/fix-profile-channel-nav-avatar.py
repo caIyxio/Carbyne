@@ -441,3 +441,96 @@ tab_source = tab_source.replace(
     1
 )
 tab_path.write_text(tab_source)
+
+
+# Home feed presentation updates requested after the edge-to-edge pass.
+content_path = Path("ios/Carbyne/Sources/ContentView.swift")
+content_source = content_path.read_text()
+
+home_start = content_source.index("struct HomeScreen: View {")
+home_end = content_source.index("struct MessagesScreen: View {", home_start)
+home = content_source[home_start:home_end]
+
+# Promote the Carbyne/search row to a persistent feed header. It remains
+# separate from the scrolling cards and uses a material background.
+header_start = home.find("                HStack {\n                    Text(\"Carbyne\")")
+grid_start = home.find("\n\n                LazyVGrid", header_start)
+if header_start < 0 or grid_start < 0:
+    raise SystemExit("Could not locate HomeScreen logo/search row; refusing a broad edit.")
+home = home[:header_start] + home[grid_start + 2:]
+
+header_modifier = r'''        .safeAreaInset(edge: .top, spacing: 0) {
+            HStack {
+                Text("Carbyne")
+                    .font(.system(size: isPad ? 30 : 26, weight: .semibold, design: .rounded))
+                    .tracking(-1.0)
+                Spacer()
+                Button { showDirectory = true } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18, weight: .medium))
+                        .frame(width: 42, height: 42)
+                        .background(.thinMaterial, in: Circle())
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.08)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Search")
+            }
+            .padding(.horizontal, isPad ? 34 : 20)
+            .padding(.vertical, 7)
+            .background(.ultraThinMaterial)
+        }
+'''
+refresh_line = "        .refreshable { await store.loadChannels() }\n"
+if refresh_line not in home:
+    raise SystemExit("Could not locate HomeScreen refreshable modifier.")
+home = home.replace(refresh_line, refresh_line + header_modifier, 1)
+
+# Slightly square off video thumbnails and reduce the creator avatar beside
+# each video without changing channel/profile avatar sizes.
+home = home.replace("RoundedRectangle(cornerRadius: 24)", "RoundedRectangle(cornerRadius: 12)", 1)
+home = home.replace(
+    ".frame(width: isPad ? 38 : 58, height: isPad ? 38 : 58)",
+    ".frame(width: isPad ? 34 : 44, height: isPad ? 34 : 44)",
+    1
+)
+content_source = content_source[:home_start] + home + content_source[home_end:]
+
+# Increase profile photos in channel lists, the signed-in user's profile,
+# and public creator profiles. Keep the video-row avatars independent.
+content_source = content_source.replace(
+    "AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 76)",
+    "AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 104)",
+    1
+)
+content_source = content_source.replace(
+    "AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 76)",
+    "AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 104)",
+    1
+)
+content_source = content_source.replace(
+    "AvatarView(url: imageURL, size: 54)",
+    "AvatarView(url: imageURL, size: 68)",
+    1
+)
+
+# Public creator pages have no custom title/header; preserve only the native
+# back affordance supplied by NavigationStack.
+public_start = content_source.index("struct PublicChannelScreen: View {")
+public_end = content_source.index("struct ChannelDirectorySheet: View {", public_start)
+public = content_source[public_start:public_end]
+if '.navigationTitle("")' not in public:
+    public = public.replace(
+        "        .toolbar(.hidden, for: .tabBar)",
+        "        .toolbar(.hidden, for: .tabBar)\n        .navigationTitle(\"\")",
+        1
+    )
+if '.toolbarBackground(.hidden, for: .navigationBar)' not in public:
+    public = public.replace(
+        '        .navigationBarTitleDisplayMode(.inline)',
+        '        .navigationBarTitleDisplayMode(.inline)\n        .toolbarBackground(.hidden, for: .navigationBar)',
+        1
+    )
+content_source = content_source[:public_start] + public + content_source[public_end:]
+
+content_path.write_text(content_source)
+print("Added a pinned Carbyne/search feed header, tightened video thumbnails, reduced video-row avatars, enlarged profile photos, and kept public profiles free of a custom header.")
