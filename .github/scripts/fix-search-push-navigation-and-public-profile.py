@@ -256,6 +256,112 @@ if ".search" in t.split("private static let symbols", 1)[0]:
     raise SystemExit("A standalone Search tab is still configured; refusing to leave duplicate navigation.")
 tp.write_text(t)
 
+
+# Use one typed NavigationStack path for Search -> public profile on both iPhone
+# and iPad. Two independent isPresented/item destinations replace each other
+# instead of reliably stacking, which caused Search to disappear on selection.
+route_decl = r'''enum CarbyneNavigationRoute: Hashable {
+    case search
+    case profile(CarbyneProfile)
+
+    static func == (lhs: CarbyneNavigationRoute, rhs: CarbyneNavigationRoute) -> Bool {
+        switch (lhs, rhs) {
+        case (.search, .search):
+            return true
+        case let (.profile(a), .profile(b)):
+            return a.id == b.id
+        default:
+            return false
+        }
+    }
+
+    func hash(into hasher: inout Hasher) {
+        switch self {
+        case .search:
+            hasher.combine(0)
+        case .profile(let profile):
+            hasher.combine(1)
+            hasher.combine(profile.id)
+        }
+    }
+}
+'''
+if "enum CarbyneNavigationRoute: Hashable" not in t:
+    t = route_decl + "\n" + t
+
+# ContentView owns the path so it survives tab-controller updates and tab
+# changes. Search and profile destinations are appended, never substituted.
+c = c.replace("    @State private var showDirectory = false\n", "")
+c = c.replace("    @State private var selectedPublicChannel: CarbyneProfile?\n",
+              "    @State private var navigationPath: [CarbyneNavigationRoute] = []\n")
+c = c.replace("                NavigationStack {\n", "                NavigationStack(path: $navigationPath) {\n", 1)
+old_dest = '''                    .navigationDestination(isPresented: $showDirectory) {
+                        SearchScreen(selectChannel: openChannel)
+                    }
+                    .navigationDestination(item: $selectedPublicChannel) { profile in
+                        PublicChannelScreen(profile: profile)
+                    }'''
+new_dest = '''                    .navigationDestination(for: CarbyneNavigationRoute.self) { route in
+                        switch route {
+                        case .search:
+                            SearchScreen(selectChannel: openChannel)
+                        case .profile(let profile):
+                            PublicChannelScreen(profile: profile)
+                        }
+                    }'''
+if old_dest in c:
+    c = c.replace(old_dest, new_dest, 1)
+elif "navigationDestination(for: CarbyneNavigationRoute.self)" not in c:
+    raise SystemExit("Could not find iPad navigation destinations to convert to a single path.")
+c = c.replace("                    showDirectory: $showDirectory,\n                    selectedPublicChannel: $selectedPublicChannel,\n",
+              "                    navigationPath: $navigationPath,\n")
+c = c.replace("HomeScreen(showDirectory: $showDirectory, selectChannel: openChannel)",
+              "HomeScreen(openSearch: { navigationPath.append(.search) }, selectChannel: openChannel)")
+c = c.replace("Button { showDirectory = true } label: {",
+              "Button { navigationPath.append(.search) } label: {")
+c = c.replace("        selectedPublicChannel = profile",
+              "        navigationPath.append(.profile(profile))")
+if "showDirectory" in c or "selectedPublicChannel" in c:
+    raise SystemExit("Stale boolean/item navigation state remains in ContentView.")
+cp.write_text(c)
+
+# HomeScreen exposes an action rather than a presentation Boolean.
+c = c.replace("@Binding var showDirectory: Bool", "let openSearch: () -> Void")
+c = c.replace("Button { showDirectory = true }", "Button { openSearch() }")
+if "showDirectory" in c:
+    raise SystemExit("HomeScreen still references the old Search Boolean.")
+cp.write_text(c)
+
+# The iPhone tab controller uses the exact same path binding as ContentView.
+t = t.replace("    @Binding var showDirectory: Bool\n", "")
+t = t.replace("    @Binding var selectedPublicChannel: CarbyneProfile?\n",
+              "    @Binding var navigationPath: [CarbyneNavigationRoute]\n")
+t = t.replace("                NavigationStack {\n", "                NavigationStack(path: $navigationPath) {\n", 1)
+t = t.replace("HomeScreen(showDirectory: $showDirectory, selectChannel: selectChannel)",
+              "HomeScreen(openSearch: { navigationPath.append(.search) }, selectChannel: { profile in navigationPath.append(.profile(profile)) })")
+old_tab_dest = '''                        .navigationDestination(isPresented: $showDirectory) {
+                            SearchScreen(selectChannel: { profile in selectedPublicChannel = profile })
+                        }
+                        .navigationDestination(item: $selectedPublicChannel) { profile in
+                            PublicChannelScreen(profile: profile)
+                        }'''
+new_tab_dest = '''                        .navigationDestination(for: CarbyneNavigationRoute.self) { route in
+                            switch route {
+                            case .search:
+                                SearchScreen(selectChannel: { profile in navigationPath.append(.profile(profile)) })
+                            case .profile(let profile):
+                                PublicChannelScreen(profile: profile)
+                            }
+                        }'''
+if old_tab_dest in t:
+    t = t.replace(old_tab_dest, new_tab_dest, 1)
+elif "navigationDestination(for: CarbyneNavigationRoute.self)" not in t:
+    raise SystemExit("Could not find iPhone navigation destinations to convert to a single path.")
+t = t.replace("selectedPublicChannel = profile", "navigationPath.append(.profile(profile))")
+if "showDirectory" in t or "selectedPublicChannel" in t:
+    raise SystemExit("Stale boolean/item navigation state remains in native tab controller.")
+tp.write_text(t)
+
 for label, source in [("ContentView", c), ("tab controller", t), ("models", m)]:
     if "CarbyneTab.search" in source or "selectedTab = .search" in source or "case .search:" in source:
         raise SystemExit(f"Stale Search-tab reference remains in {label}.")
