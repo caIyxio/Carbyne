@@ -325,7 +325,8 @@ c = c.replace("Button { showDirectory = true } label: {",
 c = c.replace("        selectedPublicChannel = profile",
               "        navigationPath.append(.profile(profile))")
 if "showDirectory" in c or "selectedPublicChannel" in c:
-    raise SystemExit("Stale boolean/item navigation state remains in ContentView.")
+    leftovers = [line.strip() for line in c.splitlines() if "showDirectory" in line or "selectedPublicChannel" in line]
+    raise SystemExit("Stale boolean/item navigation state remains in ContentView: " + " | ".join(leftovers))
 cp.write_text(c)
 
 # HomeScreen exposes an action rather than a presentation Boolean.
