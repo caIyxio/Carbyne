@@ -40,7 +40,6 @@ content_view = r'''struct ContentView: View {
                     selection: $selectedTab,
                     showDirectory: $showDirectory,
                     selectedPublicChannel: $selectedPublicChannel,
-                    selectedPublicChannel: $selectedPublicChannel,
                     showAuth: { showAuth = true },
                     showProfileEditor: { showProfileEditor = true },
                     showSecurity: { showSecurity = true },
@@ -161,7 +160,6 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
     let store: CarbyneStore
     @Binding var selection: CarbyneTab
     @Binding var showDirectory: Bool
-    @Binding var selectedPublicChannel: CarbyneProfile?
     @Binding var selectedPublicChannel: CarbyneProfile?
     let showAuth: () -> Void
     let showProfileEditor: () -> Void
