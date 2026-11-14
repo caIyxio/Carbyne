@@ -17,22 +17,30 @@ content_view = r'''struct ContentView: View {
     @State private var showProfileEditor = false
     @State private var showSecurity = false
     @State private var showAlert = false
+    @State private var selectedPublicChannel: CarbyneProfile?
 
     private var isPad: Bool { sizeClass == .regular }
 
     var body: some View {
-        NavigationStack {
-            Group {
+        Group {
             if isPad {
-                VStack(spacing: 0) {
-                    iPadNavigation
-                    selectedScreen
+                NavigationStack {
+                    VStack(spacing: 0) {
+                        iPadNavigation
+                        selectedScreen
+                    }
+                    .navigationDestination(item: $selectedPublicChannel) { profile in
+                        PublicChannelScreen(profile: profile)
+                    }
+                    .toolbarBackground(.hidden, for: .navigationBar)
                 }
             } else {
                 CarbyneNativeTabController(
                     store: store,
                     selection: $selectedTab,
                     showDirectory: $showDirectory,
+                    selectedPublicChannel: $selectedPublicChannel,
+                    selectedPublicChannel: $selectedPublicChannel,
                     showAuth: { showAuth = true },
                     showProfileEditor: { showProfileEditor = true },
                     showSecurity: { showSecurity = true },
@@ -40,9 +48,6 @@ content_view = r'''struct ContentView: View {
                 )
             }
         }
-        // Keep the root transparent: an opaque systemBackground here paints the
-        // status-bar and home-indicator regions as separate white bands.
-        .background(Color.clear.ignoresSafeArea())
         .sheet(isPresented: $showAuth) { AuthenticationSheet() }
         .sheet(isPresented: $showProfileEditor) { ProfileEditorSheet() }
         .sheet(isPresented: $showSecurity) { MFASettingsSheet() }
@@ -53,11 +58,6 @@ content_view = r'''struct ContentView: View {
         } message: {
             Text(store.errorMessage ?? "Something went wrong.")
         }
-        }
-        .ignoresSafeArea(.container, edges: .all)
-        // Keep native navigation controls, but let the app content show through
-        // behind the navigation bar instead of drawing a separate bar backdrop.
-        .toolbarBackground(.hidden, for: .navigationBar)
     }
 
     @ViewBuilder
@@ -141,10 +141,7 @@ content_view = r'''struct ContentView: View {
     }
 
     private func openChannel(_ profile: CarbyneProfile) {
-        Task {
-            await store.viewChannel(profile)
-            selectedTab = .channel
-        }
+        selectedPublicChannel = profile
     }
 }
 
@@ -164,6 +161,8 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
     let store: CarbyneStore
     @Binding var selection: CarbyneTab
     @Binding var showDirectory: Bool
+    @Binding var selectedPublicChannel: CarbyneProfile?
+    @Binding var selectedPublicChannel: CarbyneProfile?
     let showAuth: () -> Void
     let showProfileEditor: () -> Void
     let showSecurity: () -> Void
@@ -189,6 +188,9 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
         let controller = UITabBarController()
         controller.delegate = context.coordinator
         controller.view.backgroundColor = .clear
+        // UIKit otherwise sizes tab content to its unobscured content layout area.
+        // A translucent tab bar allows the child controllers to render underneath it.
+        controller.tabBar.isTranslucent = true
 
         let children = makeHostingControllers()
         let uniqueControllerCount = Set(children.map { ObjectIdentifier($0) }).count
@@ -244,7 +246,9 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
             host.view.backgroundColor = .clear
             // Every tab is a full-bleed app surface. Safe-area insets are
             // handled by each screen's content layout, not imposed by UIKit.
-            host.safeAreaRegions = []
+            host.safeAreaRegions = .keyboard
+            host.edgesForExtendedLayout = .all
+            host.extendedLayoutIncludesOpaqueBars = true
             host.view.restorationIdentifier = "Carbyne.Tab.\(Self.titles[index])"
             host.tabBarItem = UITabBarItem(
                 title: Self.titles[index],
@@ -258,8 +262,13 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
     private func makeRootViews() -> [AnyView] {
         [
             AnyView(
-                HomeScreen(showDirectory: $showDirectory, selectChannel: selectChannel)
-                    .environmentObject(store)
+                NavigationStack {
+                    HomeScreen(showDirectory: $showDirectory, selectChannel: selectChannel)
+                        .navigationDestination(item: $selectedPublicChannel) { profile in
+                            PublicChannelScreen(profile: profile)
+                        }
+                }
+                .environmentObject(store)
             ),
             AnyView(
                 ContentUnavailableView("Moments", systemImage: "play.rectangle",
