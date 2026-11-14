@@ -21,7 +21,8 @@ content_view = r'''struct ContentView: View {
     private var isPad: Bool { sizeClass == .regular }
 
     var body: some View {
-        Group {
+        NavigationStack {
+            Group {
             if isPad {
                 VStack(spacing: 0) {
                     iPadNavigation
@@ -49,6 +50,7 @@ content_view = r'''struct ContentView: View {
             Button("OK") { store.errorMessage = nil }
         } message: {
             Text(store.errorMessage ?? "Something went wrong.")
+        }
         }
     }
 
