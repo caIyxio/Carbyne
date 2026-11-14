@@ -40,7 +40,9 @@ content_view = r'''struct ContentView: View {
                 )
             }
         }
-        .background(Color(uiColor: .systemBackground).ignoresSafeArea())
+        // Keep the root transparent: an opaque systemBackground here paints the
+        // status-bar and home-indicator regions as separate white bands.
+        .background(Color.clear.ignoresSafeArea())
         .sheet(isPresented: $showAuth) { AuthenticationSheet() }
         .sheet(isPresented: $showProfileEditor) { ProfileEditorSheet() }
         .sheet(isPresented: $showSecurity) { MFASettingsSheet() }
@@ -53,6 +55,9 @@ content_view = r'''struct ContentView: View {
         }
         }
         .ignoresSafeArea(.container, edges: .all)
+        // Keep native navigation controls, but let the app content show through
+        // behind the navigation bar instead of drawing a separate bar backdrop.
+        .toolbarBackground(.hidden, for: .navigationBar)
     }
 
     @ViewBuilder
