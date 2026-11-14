@@ -429,3 +429,15 @@ content_source = content_source.replace(
 )
 content_path.write_text(content_source)
 print("Expanded every iPhone tab root and the iPad root through the container safe areas; removed the empty Home navigation bar.")
+
+# The Home NavigationStack is covered by the general per-tab modifier above;
+# normalize the modifier chain so it is applied only once.
+tab_source = tab_source.replace(
+    """                .ignoresSafeArea(.container, edges: .all)
+                .ignoresSafeArea(.container, edges: .all)
+                    .environmentObject(store)""",
+    """                .ignoresSafeArea(.container, edges: .all)
+                    .environmentObject(store)""",
+    1
+)
+tab_path.write_text(tab_source)
