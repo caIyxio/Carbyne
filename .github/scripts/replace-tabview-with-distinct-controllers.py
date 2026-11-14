@@ -316,7 +316,7 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
         }
 
         private static func circularAvatar(_ image: UIImage) -> UIImage {
-            let size = CGSize(width: 60, height: 60)
+            let size = CGSize(width: 24, height: 24)
             let renderer = UIGraphicsImageRenderer(size: size)
             return renderer.image { context in
                 let rect = CGRect(origin: .zero, size: size)
