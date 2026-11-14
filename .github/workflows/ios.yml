@@ -38,6 +38,8 @@ jobs:
           tar -xzf "$RUNNER_TEMP/carbyne-project-source.tar.gz" -C .
       - name: Apply adaptive Liquid Glass SwiftUI interface
         run: python3 .github/scripts/apply-liquid-glass-ui.py
+      - name: Rebuild native Liquid Glass navigation and profile UI
+        run: python3 .github/scripts/repair-ios-interface.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
