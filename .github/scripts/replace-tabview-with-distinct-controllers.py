@@ -180,7 +180,7 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UITabBarController {
         let controller = UITabBarController()
         controller.delegate = context.coordinator
-        controller.view.backgroundColor = .systemBackground
+        controller.view.backgroundColor = .clear
 
         let children = makeHostingControllers()
         let uniqueControllerCount = Set(children.map { ObjectIdentifier($0) }).count
@@ -233,7 +233,7 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
         let roots = makeRootViews()
         return roots.enumerated().map { index, root in
             let host = UIHostingController(rootView: root)
-            host.view.backgroundColor = .systemBackground
+            host.view.backgroundColor = .clear
             host.view.restorationIdentifier = "Carbyne.Tab.\(Self.titles[index])"
             host.tabBarItem = UITabBarItem(
                 title: Self.titles[index],
