@@ -281,3 +281,108 @@ if needle in s:
 
 p.write_text(s)
 print("Separated own Profile from public Channels, pushed public creator pages with native navigation, matched profile layouts, and added the account avatar to the native tab icon.")
+
+
+# Configure the actual app root hosting controller for edge-to-edge layout.
+# Previously only the five tab child hosts had safeAreaRegions disabled; the
+# SwiftUI-managed root host still supplied container safe areas to navigation,
+# iPad content, and pushed destinations.
+app_path = Path("ios/Carbyne/Sources/CarbyneApp.swift")
+app_source = app_path.read_text()
+app_source = app_source.replace("import SwiftUI\n", "import SwiftUI\nimport UIKit\n", 1)
+app_entry = app_source.index("@main\nstruct CarbyneApp: App {")
+app_source = app_source[:app_entry] + r'''@main
+struct CarbyneApp: App {
+    @StateObject private var store = CarbyneStore()
+
+    var body: some Scene {
+        WindowGroup {
+            CarbyneEdgeToEdgeRoot {
+                ContentView()
+                    .environmentObject(store)
+                    .preferredColorScheme(.light)
+                    .task { await store.restoreSession() }
+            }
+            // Expand the representable itself to the physical window bounds.
+            .ignoresSafeArea(.container, edges: .all)
+        }
+    }
+}
+
+/// Owns the top-level SwiftUI hosting controller so the safe-area policy is
+/// applied once to the entire application, not just to individual tab roots.
+struct CarbyneEdgeToEdgeRoot<Content: View>: UIViewControllerRepresentable {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    func makeUIViewController(context: Context) -> UIHostingController<Content> {
+        let controller = UIHostingController(rootView: content)
+        // Remove status-bar / home-indicator container insets from SwiftUI layout,
+        // but retain the keyboard region so editors remain usable.
+        controller.safeAreaRegions = .keyboard
+        controller.edgesForExtendedLayout = .all
+        controller.extendedLayoutIncludesOpaqueBars = true
+        controller.view.backgroundColor = .clear
+        return controller
+    }
+
+    func updateUIViewController(
+        _ controller: UIHostingController<Content>,
+        context: Context
+    ) {
+        controller.rootView = content
+    }
+}
+'''
+app_path.write_text(app_source)
+
+# The ContentView root no longer tries to solve edge-to-edge from inside the
+# NavigationStack. The root hosting controller above owns that policy.
+content_path = Path("ios/Carbyne/Sources/ContentView.swift")
+content_source = content_path.read_text()
+content_source = content_source.replace(
+    """        // Keep the root transparent: an opaque systemBackground here paints the
+        // status-bar and home-indicator regions as separate white bands.
+        .background(Color.clear.ignoresSafeArea())
+""",
+    "",
+    1
+)
+content_source = content_source.replace(
+    "        .ignoresSafeArea(.container, edges: .all)\n",
+    "",
+    1
+)
+content_source = content_source.replace(
+    """        // Keep native navigation controls, but let the app content show through
+        // behind the navigation bar instead of drawing a separate bar backdrop.
+""",
+    "",
+    1
+)
+content_path.write_text(content_source)
+
+# Let each tab's interactive SwiftUI content participate in keyboard avoidance,
+# while removing only the system container safe areas. The UIKit child view must
+# also extend underneath translucent bars; otherwise disabling SwiftUI's safe
+# area does not enlarge the actual child-controller view frame.
+tab_path = Path("ios/Carbyne/Sources/CarbyneNativeTabController.swift")
+tab_source = tab_path.read_text()
+tab_source = tab_source.replace(
+    """            // Every tab is a full-bleed app surface. Safe-area insets are
+            // handled by each screen's content layout, not imposed by UIKit.
+            host.safeAreaRegions = []
+""",
+    """            // Apply the app-wide edge-to-edge policy to tab roots too.
+            // Keep the keyboard safe area, but remove status / home-indicator insets.
+            host.safeAreaRegions = .keyboard
+            host.edgesForExtendedLayout = .all
+            host.extendedLayoutIncludesOpaqueBars = true
+""",
+    1
+)
+tab_path.write_text(tab_source)
+print("Applied app-root edge-to-edge hosting and full-bleed tab-controller layout.")
