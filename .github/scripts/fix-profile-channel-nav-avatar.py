@@ -738,3 +738,146 @@ generator = generator.replace(
 generator_path.write_text(generator)
 
 print("Added Search as a sixth native tab and iPad navigation destination, changed the Home shortcut to select it with native Liquid Glass, and enlarged public creator typography.")
+
+
+# The native tab-controller generator runs before this profile pass in CI, so
+# patch its generated Swift output directly (not only the generator template).
+tab_path = Path("ios/Carbyne/Sources/CarbyneNativeTabController.swift")
+tab_source = tab_path.read_text()
+tab_source = tab_source.replace(
+    "        .home, .moments, .upload, .messages, .channel",
+    "        .home, .search, .moments, .upload, .messages, .channel",
+    1
+)
+tab_source = tab_source.replace(
+    '    private static let titles = ["Home", "Moments", "Upload", "Chat", "Profile"]',
+    '    private static let titles = ["Home", "Search", "Moments", "Upload", "Chat", "Profile"]',
+    1
+)
+tab_source = tab_source.replace(
+    """        "house.fill",
+        "play.rectangle.fill",
+        "plus.square.fill",""",
+    """        "house.fill",
+        "magnifyingglass",
+        "play.rectangle.fill",
+        "plus.square.fill",""",
+    1
+)
+tab_source = tab_source.replace(
+    "HomeScreen(showDirectory: $showDirectory, selectChannel: selectChannel)",
+    "HomeScreen(selectedTab: $selection, selectChannel: selectChannel)",
+    1
+)
+tab_source = tab_source.replace(
+    """            AnyView(
+                ContentUnavailableView("Moments", systemImage: "play.rectangle",
+                    description: Text("Moments will appear here."))
+                    .environmentObject(store)
+            ),""",
+    """            AnyView(
+                NavigationStack {
+                    SearchScreen(selectChannel: { profile in selectedPublicChannel = profile })
+                        .navigationDestination(item: $selectedPublicChannel) { profile in
+                            PublicChannelScreen(profile: profile)
+                        }
+                }
+                .environmentObject(store)
+            ),
+            AnyView(
+                ContentUnavailableView("Moments", systemImage: "play.rectangle",
+                    description: Text("Moments will appear here."))
+                    .environmentObject(store)
+            ),""",
+    1
+)
+tab_path.write_text(tab_source)
+
+# The iPad is also a tabbed experience; place Search in its capsule and remove
+# the old modal directory shortcut.
+content_path = Path("ios/Carbyne/Sources/ContentView.swift")
+content_source = content_path.read_text()
+content_source = content_source.replace(
+    '            iPadTab("Home", .home, icon: "house.fill")\n            iPadTab("Moments", .moments, icon: "play.rectangle.fill")',
+    '            iPadTab("Home", .home, icon: "house.fill")\n            iPadTab("Search", .search, icon: "magnifyingglass")\n            iPadTab("Moments", .moments, icon: "play.rectangle.fill")',
+    1
+)
+content_source = content_source.replace(
+    """            Button { showDirectory = true } label: {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 19, weight: .medium))
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Search")
+""",
+    "",
+    1
+)
+# Search tab is available in the iPad selected-screen switch as well.
+content_source = content_source.replace(
+    """        case .home:
+            HomeScreen(selectedTab: $selectedTab, selectChannel: openChannel)
+        case .moments:""",
+    """        case .home:
+            HomeScreen(selectedTab: $selectedTab, selectChannel: openChannel)
+        case .search:
+            SearchScreen(selectChannel: openChannel)
+        case .moments:""",
+    1
+)
+content_path.write_text(content_source)
+
+# Remove the public creator's navigation header completely while retaining a
+# compact back affordance over the banner. This avoids the blank nav-bar strip
+# that remained even with an empty navigation title.
+public_start = content_source.index("struct PublicChannelScreen: View {")
+public_end = content_source.index("struct ChannelDirectorySheet: View {", public_start)
+public = content_source[public_start:public_end]
+public = public.replace(
+    "struct PublicChannelScreen: View {\n    @EnvironmentObject private var store: CarbyneStore",
+    "struct PublicChannelScreen: View {\n    @EnvironmentObject private var store: CarbyneStore\n    @Environment(\\.dismiss) private var dismiss",
+    1
+)
+public = public.replace(
+    """        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {""",
+    """        ZStack(alignment: .topLeading) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {""",
+    1
+)
+# Close the ScrollView inside the ZStack and overlay a back control on the banner.
+public = public.replace(
+    """        .background(Color.clear)
+        .toolbar(.hidden, for: .tabBar)
+        // Keep the native back affordance, but remove the creator-page title/header.
+        .navigationTitle(" ")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)""",
+    """            .background(Color.clear)
+            }
+            Button { dismiss() } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 38, height: 38)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .background {
+                if #available(iOS 26.0, *) {
+                    Circle().fill(.clear).glassEffect(.regular.interactive(), in: Circle())
+                } else {
+                    Circle().fill(.ultraThinMaterial)
+                }
+            }
+            .padding(.leading, 16)
+            .padding(.top, 8)
+        }
+        .toolbar(.hidden, for: .tabBar)
+        .toolbar(.hidden, for: .navigationBar)""",
+    1
+)
+content_source = content_source[:public_start] + public + content_source[public_end:]
+content_path.write_text(content_source)
+print("Patched generated iPhone/iPad tabs, added Search navigation, and removed the public-profile navigation header while retaining an overlaid back control.")
