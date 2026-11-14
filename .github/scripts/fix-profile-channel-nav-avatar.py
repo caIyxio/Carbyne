@@ -881,3 +881,37 @@ public = public.replace(
 content_source = content_source[:public_start] + public + content_source[public_end:]
 content_path.write_text(content_source)
 print("Patched generated iPhone/iPad tabs, added Search navigation, and removed the public-profile navigation header while retaining an overlaid back control.")
+
+
+# Ensure the sixth UIKit child exists as well as its tab item. The previous
+# replacement is intentionally matched against the full-bleed generated form.
+tab_path = Path("ios/Carbyne/Sources/CarbyneNativeTabController.swift")
+tab_source = tab_path.read_text()
+moments_root = """            AnyView(
+                ContentUnavailableView("Moments", systemImage: "play.rectangle",
+                    description: Text("Moments will appear here."))
+                    .ignoresSafeArea(.container, edges: .all)
+                    .environmentObject(store)
+            ),"""
+search_root = """            AnyView(
+                NavigationStack {
+                    SearchScreen(selectChannel: { profile in selectedPublicChannel = profile })
+                        .navigationDestination(item: $selectedPublicChannel) { profile in
+                            PublicChannelScreen(profile: profile)
+                        }
+                }
+                .ignoresSafeArea(.container, edges: .all)
+                .environmentObject(store)
+            ),
+"""
+if "SearchScreen(selectChannel:" not in tab_source:
+    if moments_root not in tab_source:
+        raise SystemExit("Could not locate the Moments tab root; refusing to generate a mismatched tab controller.")
+    tab_source = tab_source.replace(moments_root, search_root + moments_root, 1)
+tab_path.write_text(tab_source)
+
+# The Search tab must remain the second root in the same order as the UIKit
+# tab metadata, so fail early if the generated controller is inconsistent.
+if tab_source.count("SearchScreen(selectChannel:") != 1:
+    raise SystemExit("Expected exactly one SearchScreen root in the native tab controller.")
+print("Verified six native tab roots, including Search.")
