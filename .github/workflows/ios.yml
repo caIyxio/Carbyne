@@ -41,21 +41,8 @@ jobs:
           set -euo pipefail
           PROJECT_YML="$(find ios/Carbyne -maxdepth 3 -name project.yml -print -quit)"
           test -n "$PROJECT_YML"
-          PROJECT_DIR="$(dirname "$PROJECT_YML")"
-          SOURCE_DIR="$(python3 - "$PROJECT_YML" <<'PY'
-          import pathlib, re, sys
-          spec = pathlib.Path(sys.argv[1])
-          text = spec.read_text()
-          candidates = re.findall(r'^\\s*-\\s*path:\\s*["\']?([^"\'\\n#]+)', text, re.M)
-          for item in candidates:
-              p = (spec.parent / item.strip()).resolve()
-              if p.is_dir() and any(p.rglob("*.swift")):
-                  print(p)
-                  break
-          else:
-              print(spec.parent)
-          PY
-          )"
+          SOURCE_DIR="$(find ios/Carbyne -maxdepth 3 -type d -name Sources -print -quit)"
+          if [ -z "$SOURCE_DIR" ]; then SOURCE_DIR="$(dirname "$PROJECT_YML")"; fi
           ASSET_DIR="$SOURCE_DIR/Assets.xcassets/AppIcon.appiconset"
           mkdir -p "$ASSET_DIR"
           base64 --decode .github/assets/carbyne-app-icon.png.b64 > "$RUNNER_TEMP/CarbyneIcon256.png"
@@ -77,17 +64,13 @@ jobs:
           }
           JSON
           python3 - "$PROJECT_YML" <<'PY'
-          import pathlib, re, sys
+          import pathlib, sys
           p = pathlib.Path(sys.argv[1])
           text = p.read_text()
-          setting = "    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon"
           if "ASSETCATALOG_COMPILER_APPICON_NAME" not in text:
-              if re.search(r"(?m)^settings:\\s*$", text):
-                  text = re.sub(r"(?m)^settings:\\s*$", "settings:\\n  base:\\n" + setting, text, count=1)
-              else:
-                  text = "settings:\\n  base:\\n" + setting + "\\n\\n" + text
+              text = "settings:\n  base:\n    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon\n\n" + text
               p.write_text(text)
-          print(f"Installed AppIcon asset catalog at {p.parent}")
+          print("Carbyne app icon asset catalog installed.")
           PY
       - name: Apply Supabase Swift SDK storage compatibility patch
         run: python3 .github/scripts/patch-supabase-storage-api.py
@@ -124,7 +107,6 @@ jobs:
           /usr/bin/zip -qry "$GITHUB_WORKSPACE/Carbyne-unsigned.ipa" Payload
           test -s "$GITHUB_WORKSPACE/Carbyne-unsigned.ipa"
           unzip -t "$GITHUB_WORKSPACE/Carbyne-unsigned.ipa"
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconFiles' "$APP/Info.plist" || true
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:
