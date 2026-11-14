@@ -116,8 +116,11 @@ profile = r'''struct ChannelScreen: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .background(Color(uiColor: .systemBackground))
-                .ignoresSafeArea(edges: [.top, .horizontal])
+                // Let the profile content draw beneath both system bars.
+                // A clear hosting surface prevents UIKit's safe-area fill from
+                // painting opaque strips above the status bar and below the tab bar.
+                .background(Color.clear)
+                .ignoresSafeArea()
             } else {
                 ContentUnavailableView("Your Profile", systemImage: "person.crop.circle",
                     description: Text("Sign in to view and edit your profile."))
