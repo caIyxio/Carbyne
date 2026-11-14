@@ -5,7 +5,7 @@ p = Path("ios/Carbyne/Sources/ContentView.swift")
 s = p.read_text()
 
 # Separate the signed-in user's Profile tab from other people's Channels.
-# Other creators open in their own sheet and never replace the Profile tab.
+# Other creators use a native push destination and never replace the Profile tab.
 s = s.replace(
     "    @State private var showAlert = false\n",
     "    @State private var showAlert = false\n    @State private var selectedPublicChannel: CarbyneProfile?\n",
@@ -13,7 +13,7 @@ s = s.replace(
 )
 s = s.replace(
     "        .sheet(isPresented: $showDirectory) { ChannelDirectorySheet(selectChannel: openChannel) }\n",
-    "        .sheet(isPresented: $showDirectory) { ChannelDirectorySheet(selectChannel: openChannel) }\n        .sheet(item: $selectedPublicChannel) { profile in PublicChannelSheet(profile: profile) }\n",
+    "        .sheet(isPresented: $showDirectory) { ChannelDirectorySheet(selectChannel: openChannel) }\n        .navigationDestination(item: $selectedPublicChannel) { profile in PublicChannelScreen(profile: profile) }\n",
     1
 )
 s = s.replace(
@@ -131,60 +131,102 @@ profile = r'''struct ChannelScreen: View {
     }
 }
 
-private struct PublicChannelSheet: View {
+private struct PublicChannelScreen: View {
     @EnvironmentObject private var store: CarbyneStore
     let profile: CarbyneProfile
-    @Environment(\.dismiss) private var dismiss
+    @State private var selectedSection = "Home"
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    AsyncImage(url: store.publicImageURL(path: profile.bannerPath)) { phase in
-                        if let image = phase.image { image.resizable().scaledToFill() }
-                        else { Rectangle().fill(Color(uiColor: .secondarySystemBackground)) }
-                    }
-                    .frame(height: 155)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                AsyncImage(url: store.publicImageURL(path: profile.bannerPath)) { phase in
+                    if let image = phase.image { image.resizable().scaledToFill() }
+                    else { Rectangle().fill(Color(uiColor: .secondarySystemBackground)) }
+                }
+                .frame(maxWidth: .infinity)
+                .aspectRatio(3.0, contentMode: .fit)
+                .clipped()
 
-                    HStack(alignment: .top, spacing: 12) {
-                        AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 76)
-                            .padding(.top, -24)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(profile.title).font(.system(size: 20, weight: .semibold))
-                            Text("@\(profile.username ?? "unknown")")
-                                .font(.system(size: 14)).foregroundStyle(.secondary)
+                HStack(alignment: .top, spacing: 12) {
+                    AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 76)
+                        .overlay(Circle().stroke(Color(uiColor: .systemBackground), lineWidth: 3))
+                        .padding(.top, -26)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(profile.title)
+                            .font(.system(size: 20, weight: .semibold))
+                            .lineLimit(2)
+                        Text("@\(profile.username ?? "unknown")")
+                            .font(.system(size: 14)).foregroundStyle(.secondary)
+                        Text("\(store.subscriberCount) subscribers")
+                            .font(.system(size: 13)).foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 8)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+
+                Button(store.isSubscribed ? "Subscribed" : "Subscribe") {
+                    Task { await store.toggleSubscription() }
+                }
+                .buttonStyle(.borderedProminent)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+
+                HStack(spacing: 0) {
+                    ForEach(["Home", "Posts", "About"], id: \.self) { item in
+                        Button { selectedSection = item } label: {
+                            Text(item)
+                                .font(.system(size: 14, weight: selectedSection == item ? .semibold : .regular))
+                                .foregroundStyle(selectedSection == item ? .primary : .secondary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 11)
+                                .overlay(alignment: .bottom) {
+                                    if selectedSection == item {
+                                        Rectangle().fill(Color.primary).frame(height: 2)
+                                    }
+                                }
                         }
-                        .padding(.top, 8)
-                        Spacer()
+                        .buttonStyle(.plain)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
+                }
+                .overlay(alignment: .bottom) {
+                    Rectangle().fill(Color(uiColor: .separator)).frame(height: 0.5)
+                }
 
-                    Button(store.isSubscribed ? "Subscribed" : "Subscribe") {
-                        Task { await store.viewChannel(profile); await store.toggleSubscription() }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 18)
-
-                    Text("Channel")
+                Group {
+                    switch selectedSection {
+                    case "Posts":
+                        ContentUnavailableView("No posts yet", systemImage: "play.rectangle",
+                            description: Text("This creator hasn't published any posts yet."))
+                    case "About":
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(profile.title)
+                            Text("@\(profile.username ?? "unknown")")
+                        }
                         .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                    default:
+                        Text("Channel")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                    }
                 }
+                .frame(minHeight: 140, alignment: .topLeading)
             }
-            .ignoresSafeArea(edges: .horizontal)
-            .navigationTitle(profile.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .task { await store.viewChannel(profile); await store.refreshSubscription(for: profile) }
+        .background(Color.clear)
+        .toolbar(.hidden, for: .tabBar)
+        .navigationTitle(profile.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await store.viewChannel(profile)
+            await store.refreshSubscription(for: profile)
+        }
     }
 }
 
@@ -240,4 +282,4 @@ if needle in s:
     s = s[:begin] + fn + s[finish:]
 
 p.write_text(s)
-print("Separated own Profile from public Channels, moved public creator pages into their own sheet, compacted profile geometry, and added the account avatar to the native tab icon.")
+print("Separated own Profile from public Channels, pushed public creator pages with native navigation, matched profile layouts, and added the account avatar to the native tab icon.")
