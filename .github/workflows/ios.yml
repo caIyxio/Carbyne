@@ -42,8 +42,6 @@ jobs:
         run: python3 .github/scripts/repair-ios-interface.py
       - name: Use unique UIKit tab controllers to prevent controller-sharing crash
         run: python3 .github/scripts/replace-tabview-with-distinct-controllers.py
-      - name: Use unique UIKit tab controllers to prevent controller-sharing crash
-        run: python3 .github/scripts/replace-tabview-with-distinct-controllers.py
       - name: Fix scrolling Home header and compact edge-to-edge profile layout
         run: python3 .github/scripts/fix-home-header-profile-layout.py
       - name: Separate own Profile from public Channels and use account avatar in tab bar
