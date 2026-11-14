@@ -127,7 +127,7 @@ profile = r'''struct ChannelScreen: View {
     }
 }
 
-private struct PublicChannelScreen: View {
+struct PublicChannelScreen: View {
     @EnvironmentObject private var store: CarbyneStore
     let profile: CarbyneProfile
     @State private var selectedSection = "Home"
