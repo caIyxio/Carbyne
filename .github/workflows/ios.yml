@@ -48,6 +48,8 @@ jobs:
         run: python3 .github/scripts/fix-profile-channel-nav-avatar.py
       - name: Push Search in existing navigation and repair public profile layout
         run: python3 .github/scripts/fix-search-push-navigation-and-public-profile.py
+      - name: Fix Home Search action scope and align public profile Subscribe button
+        run: python3 .github/scripts/fix-profile-header-and-search-scope.py
       - name: Extend public profile banner behind the status bar
         run: python3 .github/scripts/extend-public-profile-banner-under-status-bar.py
       - name: Preserve extracted SwiftUI source for implementation review
@@ -90,7 +92,7 @@ jobs:
           p = pathlib.Path(sys.argv[1])
           text = p.read_text()
           if "ASSETCATALOG_COMPILER_APPICON_NAME" not in text:
-              text = "settings:\n  base:\n    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon\n\n" + text
+              text = "settings:\\n  base:\\n    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon\\n\\n" + text
               p.write_text(text)
           print("Carbyne app icon asset catalog installed.")
           PY
@@ -111,15 +113,15 @@ jobs:
       - name: Compile for generic iOS device (unsigned)
         working-directory: ios/Carbyne
         run: |
-          xcodebuild \
-            -project Carbyne.xcodeproj \
-            -scheme Carbyne \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath "$RUNNER_TEMP/CarbyneDerivedData" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY='' \
+          xcodebuild \\
+            -project Carbyne.xcodeproj \\
+            -scheme Carbyne \\
+            -configuration Release \\
+            -destination 'generic/platform=iOS' \\
+            -derivedDataPath "$RUNNER_TEMP/CarbyneDerivedData" \\
+            CODE_SIGNING_ALLOWED=NO \\
+            CODE_SIGNING_REQUIRED=NO \\
+            CODE_SIGN_IDENTITY='' \\
             build
       - name: Package unsigned IPA
         run: |
