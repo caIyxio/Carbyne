@@ -764,11 +764,17 @@ tab_source = tab_source.replace(
         "plus.square.fill",""",
     1
 )
+# HomeScreen's API is finalized by fix-search-push-navigation-and-public-profile.py
+# as showDirectory: Search is pushed from Home, not represented by tab selection.
+# Keep the native Home root on that same API instead of reintroducing the stale
+# selectedTab binding (which no longer matches HomeScreen's initializer).
 tab_source = tab_source.replace(
-    "HomeScreen(showDirectory: $showDirectory, selectChannel: selectChannel)",
     "HomeScreen(selectedTab: $selection, selectChannel: selectChannel)",
+    "HomeScreen(showDirectory: $showDirectory, selectChannel: selectChannel)",
     1
 )
+if "HomeScreen(showDirectory: $showDirectory, selectChannel: selectChannel)" not in tab_source:
+    raise SystemExit("Native Home tab is missing its Search destination binding.")
 tab_source = tab_source.replace(
     """            AnyView(
                 ContentUnavailableView("Moments", systemImage: "play.rectangle",
