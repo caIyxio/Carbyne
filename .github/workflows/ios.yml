@@ -36,6 +36,14 @@ jobs:
         run: |
           cat .github/source-bundle/part-*.b64 | base64 --decode > "$RUNNER_TEMP/carbyne-project-source.tar.gz"
           tar -xzf "$RUNNER_TEMP/carbyne-project-source.tar.gz" -C .
+      - name: Preserve extracted SwiftUI source for implementation review
+        run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
+      - name: Upload extracted SwiftUI source
+        uses: actions/upload-artifact@v4
+        with:
+          name: Carbyne-iOS-source-snapshot
+          path: ${{ runner.temp }}/carbyne-ios-source.tar.gz
+          retention-days: 2
       - name: Install Carbyne app icon
         run: |
           set -euo pipefail
