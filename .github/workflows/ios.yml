@@ -44,6 +44,8 @@ jobs:
         run: python3 .github/scripts/replace-tabview-with-distinct-controllers.py
       - name: Use unique UIKit tab controllers to prevent controller-sharing crash
         run: python3 .github/scripts/replace-tabview-with-distinct-controllers.py
+      - name: Fix scrolling Home header and compact edge-to-edge profile layout
+        run: python3 .github/scripts/fix-home-header-profile-layout.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
