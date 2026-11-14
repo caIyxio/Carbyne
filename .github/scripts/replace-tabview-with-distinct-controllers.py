@@ -263,6 +263,9 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
             AnyView(
                 NavigationStack {
                     HomeScreen(showDirectory: $showDirectory, selectChannel: selectChannel)
+                        .navigationDestination(isPresented: $showDirectory) {
+                            SearchScreen(selectChannel: { profile in selectedPublicChannel = profile })
+                        }
                         .navigationDestination(item: $selectedPublicChannel) { profile in
                             PublicChannelScreen(profile: profile)
                         }
