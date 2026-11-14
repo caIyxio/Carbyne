@@ -71,35 +71,6 @@ struct MessagesScreen: View {
 '''
 s=s[:start]+new+s[end:]
 p.write_text(s)
-# Place channel title and overflow menu inside the scrolling channel content.
-s, header_count = re.subn(
-    r'(VStack\(alignment: \.leading, spacing: 0\) \{\s*)AsyncImage\(url: store\.publicImageURL\(path: channel\.bannerPath\)\)',
-    r'''\1HStack {
-                                Spacer()
-                                Text(isOwnChannel ? "Your Channel" : channel.title).font(.system(size:17,weight:.semibold))
-                                Spacer()
-                                Menu {
-                                    if isOwnChannel {
-                                        Button("Edit profile", systemImage: "pencil") { openEditor() }
-                                        Button("Security / 2FA", systemImage: "lock.shield") { openSecurity() }
-                                    }
-                                    Button("Switch account", systemImage: "person.2") { showMenu = true }
-                                    if store.session != nil { Button("Sign out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) { Task { await store.signOut() } } }
-                                } label: { Image(systemName:"ellipsis.circle").font(.system(size:25)).frame(width:44,height:44).contentShape(Circle()) }
-                            }.padding(.horizontal,18).padding(.vertical,8)
-                            AsyncImage(url: store.publicImageURL(path: channel.bannerPath))''',
-    s, count=1
-)
-if header_count != 1:
-    raise SystemExit("Could not locate channel ScrollView header.")
-s, nav_count = re.subn(
-    r'\s*\.navigationTitle\(isOwnChannel \? "Your Channel" : \(channel\?\.title \?\? "Channel"\)\)\s*\.navigationBarTitleDisplayMode\(\.inline\)\s*\.toolbar \{.*?\n\s*\}',
-    '\n            .toolbar(.hidden, for: .navigationBar)',
-    s, count=1, flags=re.S
-)
-if nav_count != 1:
-    raise SystemExit("Could not remove fixed channel navigation bar.")
-p.write_text(s)
 store_path = Path('ios/Carbyne/Sources/CarbyneStore.swift')
 store_source = store_path.read_text()
 old_own = """    func showOwnChannel() async {
@@ -152,4 +123,5 @@ s=s.replace("""            .navigationTitle(isOwnChannel ? "Your Channel" : (cha
                 }
             }""","""            .toolbar(.hidden, for: .navigationBar)""")
 
+p.write_text(s)
 m=Path('ios/Carbyne/Sources/CarbyneModels.swift'); t=m.read_text().replace('case home, messages, upload, channel','case home, moments, messages, upload, channel');m.write_text(t)
