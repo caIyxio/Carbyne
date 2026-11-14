@@ -219,10 +219,13 @@ private struct PublicChannelScreen: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color.clear)
+        .background(Color.clear.ignoresSafeArea())
+        .ignoresSafeArea(.container, edges: [.top, .bottom])
         .toolbar(.hidden, for: .tabBar)
-        .navigationTitle(profile.title)
+        // Keep the native back affordance, but remove the creator-page title/header.
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .task {
             await store.viewChannel(profile)
             await store.refreshSubscription(for: profile)
