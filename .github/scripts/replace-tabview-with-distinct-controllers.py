@@ -171,11 +171,11 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
     ]
     private static let titles = ["Home", "Moments", "Upload", "Chat", "Profile"]
     private static let symbols = [
-        "house.fill",
-        "play.rectangle.fill",
-        "plus.square.fill",
-        "bubble.left.and.bubble.right.fill",
-        "person.crop.circle.fill"
+        "house",
+        "play.rectangle",
+        "plus.circle.fill",
+        "bubble.left.and.bubble.right",
+        "person.crop.circle"
     ]
 
     func makeCoordinator() -> Coordinator {
@@ -249,10 +249,11 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
             host.extendedLayoutIncludesOpaqueBars = true
             host.view.restorationIdentifier = "Carbyne.Tab.\(Self.titles[index])"
             host.tabBarItem = UITabBarItem(
-                title: Self.titles[index],
+                title: nil,
                 image: UIImage(systemName: Self.symbols[index]),
                 selectedImage: UIImage(systemName: Self.symbols[index])
             )
+            host.tabBarItem.accessibilityLabel = Self.titles[index]
             return host
         }
     }
