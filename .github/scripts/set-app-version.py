@@ -54,7 +54,7 @@ else:
             "INFOPLIST_KEY_CFBundleVersion": build_number,
         }
         for key, value in keys.items():
-            pattern = re.compile(rf"(?m)^(\\s*){re.escape(key)}:\\s*.*$")
+            pattern = re.compile(rf"(?m)^(\s*){re.escape(key)}:\s*.*$")
             replacement = lambda match, value=value: f'{match.group(1)}{key}: "{value}"'
             if pattern.search(text):
                 text = pattern.sub(replacement, text)
@@ -70,7 +70,7 @@ for key, value in {
     "INFOPLIST_KEY_CFBundleShortVersionString": version,
     "INFOPLIST_KEY_CFBundleVersion": build_number,
 }.items():
-    pattern = re.compile(rf"(?m)^(\\s*){re.escape(key)}:\\s*.*$")
+    pattern = re.compile(rf"(?m)^(\s*){re.escape(key)}:\s*.*$")
     text = pattern.sub(lambda match, key=key, value=value: f'{match.group(1)}{key}: "{value}"', text)
 
 project_yml.write_text(text)
