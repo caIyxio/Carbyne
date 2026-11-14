@@ -378,3 +378,54 @@ tab_source = tab_source.replace(
 )
 tab_path.write_text(tab_source)
 print("Applied app-root edge-to-edge hosting and full-bleed tab-controller layout.")
+
+
+# Edge-to-edge correction: expand each tab's actual SwiftUI root into the
+# device container safe areas. UIHostingController.safeAreaRegions alone does
+# not remove the NavigationStack/ScrollView container's own layout insets.
+tab_path = Path("ios/Carbyne/Sources/CarbyneNativeTabController.swift")
+tab_source = tab_path.read_text()
+tab_source = tab_source.replace(
+    """                NavigationStack {
+                    HomeScreen(showDirectory: $showDirectory, selectChannel: selectChannel)
+                        .navigationDestination(item: $selectedPublicChannel) { profile in
+                            PublicChannelScreen(profile: profile)
+                        }
+                }
+                .environmentObject(store)""",
+    """                NavigationStack {
+                    HomeScreen(showDirectory: $showDirectory, selectChannel: selectChannel)
+                        .navigationDestination(item: $selectedPublicChannel) { profile in
+                            PublicChannelScreen(profile: profile)
+                        }
+                        .toolbar(.hidden, for: .navigationBar)
+                }
+                .ignoresSafeArea(.container, edges: .all)
+                .environmentObject(store)""",
+    1
+)
+# All tab roots, including non-navigation roots, occupy the complete controller
+# bounds. The keyboard region remains active because only .container is ignored.
+tab_source = tab_source.replace(
+    ".environmentObject(store)\n            ),",
+    ".ignoresSafeArea(.container, edges: .all)\n                    .environmentObject(store)\n            ),"
+)
+tab_path.write_text(tab_source)
+
+# The iPad stack has the same full-bleed requirement, while retaining the
+# native navigation destination for public channels.
+content_path = Path("ios/Carbyne/Sources/ContentView.swift")
+content_source = content_path.read_text()
+content_source = content_source.replace(
+    """                    .navigationDestination(item: $selectedPublicChannel) { profile in
+                        PublicChannelScreen(profile: profile)
+                    }
+                    .toolbarBackground(.hidden, for: .navigationBar)""",
+    """                    .navigationDestination(item: $selectedPublicChannel) { profile in
+                        PublicChannelScreen(profile: profile)
+                    }
+                    .toolbar(.hidden, for: .navigationBar)
+                    .ignoresSafeArea(.container, edges: .all)"""
+)
+content_path.write_text(content_source)
+print("Expanded every iPhone tab root and the iPad root through the container safe areas; removed the empty Home navigation bar.")
