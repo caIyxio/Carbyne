@@ -6,16 +6,8 @@ s = p.read_text()
 
 # Separate the signed-in user's Profile tab from other people's Channels.
 # Other creators use a native push destination and never replace the Profile tab.
-s = s.replace(
-    "    @State private var showAlert = false\n",
-    "    @State private var showAlert = false\n    @State private var selectedPublicChannel: CarbyneProfile?\n",
-    1
-)
-s = s.replace(
-    "        .sheet(isPresented: $showDirectory) { ChannelDirectorySheet(selectChannel: openChannel) }\n",
-    "        .sheet(isPresented: $showDirectory) { ChannelDirectorySheet(selectChannel: openChannel) }\n        .navigationDestination(item: $selectedPublicChannel) { profile in PublicChannelScreen(profile: profile) }\n",
-    1
-)
+# selectedPublicChannel and its NavigationStack destinations are created by
+# replace-tabview-with-distinct-controllers.py. Do not inject them again here.
 s = s.replace(
     "    private func openChannel(_ profile: CarbyneProfile) {\n        Task {\n            await store.viewChannel(profile)\n            selectedTab = .channel\n        }\n    }",
     "    private func openChannel(_ profile: CarbyneProfile) {\n        selectedPublicChannel = profile\n    }",
