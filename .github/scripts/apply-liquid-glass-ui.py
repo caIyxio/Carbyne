@@ -3,7 +3,7 @@ import re
 p=Path('ios/Carbyne/Sources/ContentView.swift')
 s=p.read_text()
 start=s.index('struct ContentView: View {')
-end=s.index('struct MessagesScreen: View {
+end=s.index('struct UploadScreen: View {')
  @EnvironmentObject private var store: CarbyneStore
  let openAuth: () -> Void
  var body: some View {
@@ -64,6 +64,24 @@ struct HomeScreen: View {
  if !store.channels.isEmpty { Text("Channels").font(.system(size:21,weight:.semibold));ForEach(store.channels){channel in Button{selectChannel(channel)}label:{ChannelRow(profile:channel,imageURL:store.publicImageURL(path:channel.avatarPath))}.buttonStyle(.plain)} }
  }.padding(.horizontal,isPad ? 34:20).padding(.top,12).padding(.bottom,30).frame(maxWidth:1200).frame(maxWidth:.infinity) }.task{await store.loadChannels()}.refreshable{await store.loadChannels()} }
 }
+struct MessagesScreen: View {
+ @EnvironmentObject private var store: CarbyneStore
+ let openAuth: () -> Void
+ var body: some View {
+  NavigationStack {
+   ContentUnavailableView {
+    Label("Chat is coming soon", systemImage:"bubble.left.and.bubble.right")
+   } description: {
+    Text(store.session == nil ? "Sign in to your Carbyne account. Messaging will appear here when the chat service is connected." : "Your Carbyne account is connected. Messaging is not yet available in the current backend.")
+   } actions: {
+    if store.session == nil { Button("Log in", action:openAuth).buttonStyle(.borderedProminent) }
+   }
+   .navigationTitle("Chat")
+   .navigationBarTitleDisplayMode(.inline)
+  }
+ }
+}
+
 '''
 s=s[:start]+new+s[end:]
 p.write_text(s)
