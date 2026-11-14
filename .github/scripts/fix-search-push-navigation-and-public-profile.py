@@ -287,7 +287,10 @@ route_decl = r'''enum CarbyneNavigationRoute: Hashable {
 }
 '''
 if "enum CarbyneNavigationRoute: Hashable" not in t:
-    t = route_decl + "\n" + t
+    import_anchor = "import UIKit\n"
+    if import_anchor not in t:
+        raise SystemExit("Could not locate Swift imports for navigation route declaration.")
+    t = t.replace(import_anchor, import_anchor + "\n" + route_decl, 1)
 
 # ContentView owns the path so it survives tab-controller updates and tab
 # changes. Search and profile destinations are appended, never substituted.
