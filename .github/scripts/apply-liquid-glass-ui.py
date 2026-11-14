@@ -4,24 +4,6 @@ p=Path('ios/Carbyne/Sources/ContentView.swift')
 s=p.read_text()
 start=s.index('struct ContentView: View {')
 end=s.index('struct UploadScreen: View {')
- @EnvironmentObject private var store: CarbyneStore
- let openAuth: () -> Void
- var body: some View {
-  NavigationStack {
-   ContentUnavailableView {
-    Label("Chat is coming soon", systemImage:"bubble.left.and.bubble.right")
-   } description: {
-    Text(store.session == nil ? "Sign in to your Carbyne account. Messaging will appear here when the chat service is connected." : "Your Carbyne account is connected. Messaging is not yet available in the current backend.")
-   } actions: {
-    if store.session == nil { Button("Log in", action:openAuth).buttonStyle(.borderedProminent) }
-   }
-   .navigationTitle("Chat")
-   .navigationBarTitleDisplayMode(.inline)
-  }
- }
-}
-
-struct UploadScreen: View {')
 new='''import SwiftUI
 import UIKit
 import PhotosUI
