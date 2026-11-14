@@ -52,6 +52,7 @@ content_view = r'''struct ContentView: View {
             Text(store.errorMessage ?? "Something went wrong.")
         }
         }
+        .ignoresSafeArea(.container, edges: .all)
     }
 
     @ViewBuilder
@@ -236,10 +237,9 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
         return roots.enumerated().map { index, root in
             let host = UIHostingController(rootView: root)
             host.view.backgroundColor = .clear
-            // The Profile tab must render edge-to-edge, including behind the
-            // status bar and the bottom home-indicator region. Other tabs retain
-            // normal safe-area behavior.
-            host.safeAreaRegions = index == 4 ? [] : .all
+            // Every tab is a full-bleed app surface. Safe-area insets are
+            // handled by each screen's content layout, not imposed by UIKit.
+            host.safeAreaRegions = []
             host.view.restorationIdentifier = "Carbyne.Tab.\(Self.titles[index])"
             host.tabBarItem = UITabBarItem(
                 title: Self.titles[index],
