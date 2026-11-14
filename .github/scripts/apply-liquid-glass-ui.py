@@ -20,17 +20,17 @@ struct ContentView: View {
  private var isPad: Bool { sizeClass == .regular }
  var body: some View {
   VStack(spacing:0) {
-   if isPad { HStack { Text("Carbyne").font(.system(size:29,weight:.semibold,design:.rounded)); Spacer(); nav("Home",.home); nav("Moments",.moments); nav("+",.upload); nav("Chat",.messages); nav("Profile",.channel); Button { showDirectory=true } label: { Image(systemName:"magnifyingglass").padding(12) } }.padding(.horizontal,32).padding(.vertical,10).background(.ultraThinMaterial,in:Capsule()).modifier(CarbyneGlass()).padding(.horizontal,32).padding(.top,8) }
+   if isPad { HStack { Spacer(minLength:0); nav("Home",.home); nav("Moments",.moments); nav("+",.upload); nav("Chat",.messages); Button { openOwnProfile() } label: { AvatarView(url:store.publicImageURL(path:store.profile?.avatarPath),size:30) }.buttonStyle(.plain); Button { showDirectory=true } label: { Image(systemName:"magnifyingglass").font(.system(size:18)).padding(12) }; Spacer(minLength:0) }.padding(.horizontal,24).padding(.vertical,8).background(.ultraThinMaterial,in:Capsule()).modifier(CarbyneGlass()).padding(.horizontal,32).padding(.top,8) }
    Group { switch selectedTab { case .home: HomeScreen(showDirectory:$showDirectory,selectChannel:openChannel); case .moments: ContentUnavailableView("Moments",systemImage:"circle.dashed",description:Text("Moments will appear here.")); case .messages: MessagesScreen(openAuth:{showAuth=true}); case .upload: UploadScreen(openAuth:{showAuth=true}); case .channel: ChannelScreen(openAuth:{showAuth=true},openEditor:{showProfileEditor=true},openSecurity:{showSecurity=true}) } }.frame(maxWidth:.infinity,maxHeight:.infinity)
-   if !isPad { HStack(spacing:0) { phoneTab("Home",.home); phoneTab("Moments",.moments); phoneTab("Upload",.upload); phoneTab("Chat",.messages); Button { openOwnProfile() } label: { VStack(spacing:4) { AvatarView(url:store.publicImageURL(path:store.profile?.avatarPath),size:27); Text("Profile").font(.system(size:10,weight:.medium)) }.foregroundStyle(selectedTab == .channel ? Color.accentColor : Color.primary).frame(maxWidth:.infinity) }.buttonStyle(.plain) }.padding(8).background(.ultraThinMaterial,in:Capsule()).modifier(CarbyneGlass()).padding(.horizontal,22).padding(.bottom,5) }
+   if !isPad { HStack(spacing:0) { phoneTab("Home",.home); phoneTab("Moments",.moments); phoneTab("Upload",.upload); phoneTab("Chat",.messages); Button { openOwnProfile() } label: { VStack(spacing:4) { AvatarView(url:store.publicImageURL(path:store.profile?.avatarPath),size:27); Text("Profile").font(.system(size:10,weight:.medium)) }.foregroundStyle(selectedTab == .channel ? Color.accentColor : Color.primary).frame(maxWidth:.infinity) }.buttonStyle(.plain) }.padding(8).background(.ultraThinMaterial,in:Capsule()).modifier(CarbyneGlass()).padding(.horizontal,22).padding(.bottom,0).offset(y:12) }
   }.background(Color(uiColor:.systemBackground).ignoresSafeArea())
    .sheet(isPresented:$showAuth){AuthenticationSheet()}.sheet(isPresented:$showProfileEditor){ProfileEditorSheet()}.sheet(isPresented:$showSecurity){MFASettingsSheet()}.sheet(isPresented:$showDirectory){ChannelDirectorySheet(selectChannel:openChannel)}
    .onChange(of:store.errorMessage){_,v in showAlert = v != nil}.alert("Carbyne",isPresented:$showAlert){Button("OK"){store.errorMessage=nil}} message:{Text(store.errorMessage ?? "Something went wrong.")}
  }
  private func nav(_ title:String,_ tab:CarbyneTab)->some View { Button { selectedTab=tab; if tab == .channel { openOwnProfile() } } label:{ Text(title).font(.system(size:14,weight:selectedTab == tab ? .semibold : .medium)).foregroundStyle(selectedTab == tab ? Color.accentColor : Color.primary).padding(.horizontal,13).padding(.vertical,10).background(selectedTab == tab ? Color.primary.opacity(0.08) : .clear,in:Capsule()) }.buttonStyle(.plain) }
- @ViewBuilder private func tabGlyph(_ tab:CarbyneTab) -> some View { let color:Color = selectedTab == tab ? .accentColor : .primary; switch tab { case .home: DiamondShape().fill(color).frame(width:27,height:27); case .moments: Circle().fill(color).frame(width:24,height:24); case .upload: TriangleShape().fill(color).frame(width:27,height:25); case .messages: BurstShape().fill(color).frame(width:27,height:27); case .channel: AvatarView(url:store.publicImageURL(path:store.profile?.avatarPath),size:30) } }
- private func phoneTab(_ title:String,_ tab:CarbyneTab)->some View { Button { selectedTab=tab; if tab == .home { Task{await store.loadChannels()} } } label:{ VStack(spacing:4){tabGlyph(tab);Text(title).font(.system(size:10,weight:.medium))}.foregroundStyle(selectedTab == tab ? Color.accentColor : Color.primary).frame(maxWidth:.infinity).padding(.vertical,7).background(selectedTab == tab ? Color.primary.opacity(0.08) : .clear,in:Capsule()) }.buttonStyle(.plain) }
- private func openOwnProfile(){ guard store.session != nil else {showAuth=true;return};selectedTab = .channel;Task{await store.showOwnChannel()} }
+ @ViewBuilder private func tabGlyph(_ tab:CarbyneTab) -> some View { switch tab { case .home: Image(systemName:"house.fill"); case .moments: Image(systemName:"circle.fill"); case .upload: Image(systemName:"triangle.fill"); case .messages: Image(systemName:"gearshape.fill"); case .channel: AvatarView(url:store.publicImageURL(path:store.profile?.avatarPath),size:30) } }
+ private func phoneTab(_ title:String,_ tab:CarbyneTab)->some View { Button { selectedTab=tab; if tab == .home { Task{await store.loadChannels()} } } label:{ VStack(spacing:4){tabGlyph(tab).font(.system(size:22,weight:.medium));Text(title).font(.system(size:10,weight:.medium))}.foregroundStyle(selectedTab == tab ? Color.accentColor : Color.primary).frame(maxWidth:.infinity).padding(.vertical,7).background(selectedTab == tab ? Color.primary.opacity(0.08) : .clear,in:Capsule()) }.buttonStyle(.plain) }
+ private func openOwnProfile(){ guard store.session != nil else {showAuth=true;return};Task{await store.showOwnChannel();selectedTab = .channel} }
  private func openChannel(_ profile:CarbyneProfile){Task{await store.viewChannel(profile);selectedTab = .channel}}
 }
 private struct DiamondShape: Shape { func path(in r:CGRect)->Path { var p=Path();p.move(to:CGPoint(x:r.midX,y:r.minY));p.addLine(to:CGPoint(x:r.maxX,y:r.midY));p.addLine(to:CGPoint(x:r.midX,y:r.maxY));p.addLine(to:CGPoint(x:r.minX,y:r.midY));p.closeSubpath();return p } }
@@ -45,7 +45,7 @@ struct HomeScreen: View {
  let selectChannel:(CarbyneProfile)->Void
  private var isPad:Bool {sizeClass == .regular}
  private let cards=[("I asked 7 AIs to remake Mario Kart and…","2M Views","Habib"),("BIG ROBLOX NEWS!!","8M Views","KreekCraft")]
- var body:some View { ScrollView { VStack(alignment:.leading,spacing:22) { if !isPad { HStack { Text("Carbyne").font(.system(size:34,weight:.semibold,design:.rounded)).tracking(-1.3);Spacer();Button{showDirectory=true}label:{Image(systemName:"viewfinder").font(.system(size:19,weight:.medium)).frame(width:46,height:46).background(.thinMaterial,in:Circle()).overlay(Circle().strokeBorder(Color.primary.opacity(0.08)))}.accessibilityLabel("Search") } }
+ var body:some View { ScrollView { VStack(alignment:.leading,spacing:22) { if !isPad { HStack { Text("Carbyne").font(.system(size:34,weight:.semibold,design:.rounded)).tracking(-1.3);Spacer();Button{showDirectory=true}label:{Image(systemName:"magnifyingglass").font(.system(size:19,weight:.medium)).frame(width:46,height:46).background(.thinMaterial,in:Circle()).overlay(Circle().strokeBorder(Color.primary.opacity(0.08)))}.accessibilityLabel("Search") } }
  LazyVGrid(columns:isPad ? [GridItem(.flexible()),GridItem(.flexible())] : [GridItem(.flexible())],spacing:28){ForEach(cards,id:\\.0){card in VStack(alignment:.leading,spacing:9){RoundedRectangle(cornerRadius:24).fill(Color(uiColor:.systemGray5)).aspectRatio(16/9,contentMode:.fit);HStack(spacing:12){Circle().fill(Color(uiColor:.systemGray4)).frame(width:isPad ? 38:58,height:isPad ? 38:58);VStack(alignment:.leading,spacing:2){Text(card.0).font(.system(size:isPad ? 14:17,weight:.semibold)).lineLimit(1);Text(card.1).foregroundStyle(.secondary);Text(card.2).foregroundStyle(.tertiary)}.font(.system(size:isPad ? 12:14));Spacer(minLength:0)} } } }
  if !store.channels.isEmpty { Text("Channels").font(.system(size:21,weight:.semibold));ForEach(store.channels){channel in Button{selectChannel(channel)}label:{ChannelRow(profile:channel,imageURL:store.publicImageURL(path:channel.avatarPath))}.buttonStyle(.plain)} }
  }.padding(.horizontal,isPad ? 34:20).padding(.top,12).padding(.bottom,30).frame(maxWidth:1200).frame(maxWidth:.infinity) }.task{await store.loadChannels()}.refreshable{await store.loadChannels()} }
@@ -71,6 +71,55 @@ struct MessagesScreen: View {
 '''
 s=s[:start]+new+s[end:]
 p.write_text(s)
+# Place channel title and overflow menu inside the scrolling channel content.
+s, header_count = re.subn(
+    r'(VStack\(alignment: \.leading, spacing: 0\) \{\s*)AsyncImage\(url: store\.publicImageURL\(path: channel\.bannerPath\)\)',
+    r'''\1HStack {
+                                Spacer()
+                                Text(isOwnChannel ? "Your Channel" : channel.title).font(.system(size:17,weight:.semibold))
+                                Spacer()
+                                Menu {
+                                    if isOwnChannel {
+                                        Button("Edit profile", systemImage: "pencil") { openEditor() }
+                                        Button("Security / 2FA", systemImage: "lock.shield") { openSecurity() }
+                                    }
+                                    Button("Switch account", systemImage: "person.2") { showMenu = true }
+                                    if store.session != nil { Button("Sign out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) { Task { await store.signOut() } } }
+                                } label: { Image(systemName:"ellipsis.circle").font(.system(size:25)).frame(width:44,height:44).contentShape(Circle()) }
+                            }.padding(.horizontal,18).padding(.vertical,8)
+                            AsyncImage(url: store.publicImageURL(path: channel.bannerPath))''',
+    s, count=1
+)
+if header_count != 1:
+    raise SystemExit("Could not locate channel ScrollView header.")
+s, nav_count = re.subn(
+    r'\s*\.navigationTitle\(isOwnChannel \? "Your Channel" : \(channel\?\.title \?\? "Channel"\)\)\s*\.navigationBarTitleDisplayMode\(\.inline\)\s*\.toolbar \{.*?\n\s*\}',
+    '\n            .toolbar(.hidden, for: .navigationBar)',
+    s, count=1, flags=re.S
+)
+if nav_count != 1:
+    raise SystemExit("Could not remove fixed channel navigation bar.")
+p.write_text(s)
+store_path = Path('ios/Carbyne/Sources/CarbyneStore.swift')
+store_source = store_path.read_text()
+old_own = """    func showOwnChannel() async {
+        guard let profile else { errorMessage = "Set a username in Edit Profile before opening your channel."; return }
+        await viewChannel(profile)
+    }"""
+new_own = """    func showOwnChannel() async {
+        if profile == nil {
+            do { try await refreshProfile() }
+            catch { errorMessage = error.localizedDescription; return }
+        }
+        guard let profile else {
+            errorMessage = "Your Carbyne profile could not be loaded. Try signing in again."
+            return
+        }
+        await viewChannel(profile)
+    }"""
+if old_own not in store_source:
+    raise SystemExit("Could not locate showOwnChannel.")
+store_path.write_text(store_source.replace(old_own, new_own))
 # Keep the channel title and overflow control in the scrolling content, matching the reference.
 s=s.replace("""VStack(alignment: .leading, spacing: 0) {
                             AsyncImage(url: store.publicImageURL(path: channel.bannerPath))""","""VStack(alignment: .leading, spacing: 0) {
