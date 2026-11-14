@@ -40,6 +40,8 @@ jobs:
         run: python3 .github/scripts/apply-liquid-glass-ui.py
       - name: Rebuild native Liquid Glass navigation and profile UI
         run: python3 .github/scripts/repair-ios-interface.py
+      - name: Use unique UIKit tab controllers to prevent controller-sharing crash
+        run: python3 .github/scripts/replace-tabview-with-distinct-controllers.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
