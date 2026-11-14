@@ -27,14 +27,19 @@ button = public[button_start:button_end]
 public = public[:button_start] + public[button_end:]
 button = button.replace("                    .padding(.horizontal, 16)\n", "")
 button = button.replace("                    .padding(.bottom, 12)\n", "")
+button = button.replace(".font(.system(size: 14, weight: .semibold))", ".font(.system(size: 12, weight: .semibold))")
+button = button.replace(".padding(.horizontal, 18)", ".padding(.horizontal, 10)")
+button = button.replace(".padding(.vertical, 10)", ".padding(.vertical, 7)")
+button = button.replace("                    .buttonStyle(.plain)", "                    .buttonStyle(.plain)\n                    .fixedSize(horizontal: true, vertical: false)")
 header_anchor = "                        Spacer(minLength: 0)\n                    }"
 if header_anchor not in public:
     raise SystemExit("Could not find the public-profile identity row trailing spacer.")
 public = public.replace(
     header_anchor,
-    "                        Spacer(minLength: 0)\n" + button + "                    }",
+    "                        Spacer(minLength: 8)\n" + button + "                    }",
     1,
 )
+public = public.replace("HStack(alignment: .top, spacing: 12)", "HStack(alignment: .center, spacing: 12)", 1)
 source = source[:public_start] + public + source[public_end:]
 
 if "navigationPath.append(.search)" in home:
