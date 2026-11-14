@@ -92,7 +92,7 @@ jobs:
           p = pathlib.Path(sys.argv[1])
           text = p.read_text()
           if "ASSETCATALOG_COMPILER_APPICON_NAME" not in text:
-              text = "settings:\\n  base:\\n    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon\\n\\n" + text
+              text = "settings:\n  base:\n    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon\n\n" + text
               p.write_text(text)
           print("Carbyne app icon asset catalog installed.")
           PY
@@ -113,15 +113,15 @@ jobs:
       - name: Compile for generic iOS device (unsigned)
         working-directory: ios/Carbyne
         run: |
-          xcodebuild \\
-            -project Carbyne.xcodeproj \\
-            -scheme Carbyne \\
-            -configuration Release \\
-            -destination 'generic/platform=iOS' \\
-            -derivedDataPath "$RUNNER_TEMP/CarbyneDerivedData" \\
-            CODE_SIGNING_ALLOWED=NO \\
-            CODE_SIGNING_REQUIRED=NO \\
-            CODE_SIGN_IDENTITY='' \\
+          xcodebuild \
+            -project Carbyne.xcodeproj \
+            -scheme Carbyne \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/CarbyneDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' \
             build
       - name: Package unsigned IPA
         run: |
