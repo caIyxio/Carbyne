@@ -534,3 +534,207 @@ content_source = content_source[:public_start] + public + content_source[public_
 
 content_path.write_text(content_source)
 print("Added a pinned Carbyne/search feed header, tightened video thumbnails, reduced video-row avatars, enlarged profile photos, and kept public profiles free of a custom header.")
+
+
+# Search is a first-class destination in the tab bar. Keep the Home header
+# search control as a shortcut that selects that tab, not a modal sheet.
+models_path = Path("ios/Carbyne/Sources/CarbyneModels.swift")
+models_source = models_path.read_text()
+models_source = models_source.replace(
+    "enum CarbyneTab: Hashable {\n    case home, moments, messages, upload, channel\n}",
+    "enum CarbyneTab: Hashable {\n    case home, search, moments, messages, upload, channel\n}",
+    1
+)
+models_path.write_text(models_source)
+
+# HomeScreen now selects Search through the same tab state used by the native
+# tab controller and iPad navigation. The search shortcut uses iOS 26's real
+# interactive Liquid Glass effect, with a material fallback on earlier iOS.
+content_path = Path("ios/Carbyne/Sources/ContentView.swift")
+content_source = content_path.read_text()
+content_source = content_source.replace(
+    "HomeScreen(showDirectory: $showDirectory, selectChannel: openChannel)",
+    "HomeScreen(selectedTab: $selectedTab, selectChannel: openChannel)"
+)
+content_source = content_source.replace(
+    "    @Binding var showDirectory: Bool\n    let selectChannel: (CarbyneProfile) -> Void",
+    "    @Binding var selectedTab: CarbyneTab\n    let selectChannel: (CarbyneProfile) -> Void",
+    1
+)
+content_source = content_source.replace(
+    "Button { showDirectory = true } label: {\n                    Image(systemName: \"magnifyingglass\")\n                        .font(.system(size: 18, weight: .medium))\n                        .frame(width: 42, height: 42)\n                        .background(.thinMaterial, in: Circle())\n                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.08)))\n                }",
+    """Button { selectedTab = .search } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18, weight: .medium))
+                        .frame(width: 42, height: 42)
+                        .background {
+                            if #available(iOS 26.0, *) {
+                                Circle().fill(.clear)
+                                    .glassEffect(.regular.interactive(), in: Circle())
+                            } else {
+                                Circle().fill(.ultraThinMaterial)
+                                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.08)))
+                            }
+                        }
+                }""",
+    1
+)
+
+# Add a persistent Search screen that pushes creator profiles in its own
+# NavigationStack, just like the Home tab. This replaces the old modal directory.
+search_view = r'''struct SearchScreen: View {
+    @EnvironmentObject private var store: CarbyneStore
+    @State private var query = ""
+    let selectChannel: (CarbyneProfile) -> Void
+
+    private var matches: [CarbyneProfile] {
+        guard !query.isEmpty else { return store.channels }
+        return store.channels.filter {
+            ($0.title + " " + ($0.username ?? ""))
+                .localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    var body: some View {
+        List(matches) { profile in
+            Button {
+                selectChannel(profile)
+            } label: {
+                ChannelRow(profile: profile,
+                           imageURL: store.publicImageURL(path: profile.avatarPath))
+            }
+            .buttonStyle(.plain)
+            .listRowInsets(EdgeInsets(top: 7, leading: 16, bottom: 7, trailing: 16))
+        }
+        .listStyle(.plain)
+        .searchable(text: $query, prompt: "Search channels")
+        .navigationTitle("Search")
+        .navigationBarTitleDisplayMode(.large)
+        .task { await store.loadChannels() }
+        .refreshable { await store.loadChannels() }
+    }
+}
+
+'''
+insert_at = content_source.index("struct MessagesScreen: View {")
+content_source = content_source[:insert_at] + search_view + content_source[insert_at:]
+
+# Public profile typography: larger display name, username, and subscriber count.
+public_start = content_source.index("struct PublicChannelScreen: View {")
+public_end = content_source.index("struct ChannelDirectorySheet: View {", public_start)
+public = content_source[public_start:public_end]
+public = public.replace(
+    '.font(.system(size: 20, weight: .semibold))',
+    '.font(.system(size: 24, weight: .semibold))',
+    1
+)
+public = public.replace(
+    '.font(.system(size: 14)).foregroundStyle(.secondary)',
+    '.font(.system(size: 16)).foregroundStyle(.secondary)',
+    1
+)
+public = public.replace(
+    '.font(.system(size: 13)).foregroundStyle(.secondary)',
+    '.font(.system(size: 16, weight: .medium)).foregroundStyle(.secondary)',
+    1
+)
+# Keep the system back affordance, but ensure no title is rendered in the
+# navigation bar. The bar background remains transparent over the banner.
+public = public.replace(
+    '.navigationTitle("")\n        .navigationBarTitleDisplayMode(.inline)\n        .toolbarBackground(.hidden, for: .navigationBar)',
+    '.navigationTitle(" ")\n        .navigationBarTitleDisplayMode(.inline)\n        .toolbarBackground(.hidden, for: .navigationBar)',
+    1
+)
+content_source = content_source[:public_start] + public + content_source[public_end:]
+
+# Slightly larger creator names and handles in Search/Channels rows too.
+content_source = content_source.replace(
+    'Text(profile.title).font(.system(size: 15, weight: .semibold))',
+    'Text(profile.title).font(.system(size: 17, weight: .semibold))',
+    1
+)
+content_source = content_source.replace(
+    'Text("@\\(profile.username ?? "unknown")").font(.system(size: 12))',
+    'Text("@\\(profile.username ?? "unknown")").font(.system(size: 14))',
+    1
+)
+content_path.write_text(content_source)
+
+# iPad navigation gets a Search destination instead of a separate modal search
+# button. Search stays in the top capsule alongside the other app sections.
+generator_path = Path(".github/scripts/replace-tabview-with-distinct-controllers.py")
+generator = generator_path.read_text()
+generator = generator.replace(
+    """        case .home:
+            HomeScreen(showDirectory: $showDirectory, selectChannel: openChannel)
+        case .moments:""",
+    """        case .home:
+            HomeScreen(selectedTab: $selectedTab, selectChannel: openChannel)
+        case .search:
+            SearchScreen(selectChannel: openChannel)
+        case .moments:""",
+    1
+)
+generator = generator.replace(
+    '            iPadTab("Home", .home, icon: "house.fill")\n            iPadTab("Moments", .moments, icon: "play.rectangle.fill")',
+    '            iPadTab("Home", .home, icon: "house.fill")\n            iPadTab("Search", .search, icon: "magnifyingglass")\n            iPadTab("Moments", .moments, icon: "play.rectangle.fill")',
+    1
+)
+# Remove the old standalone magnifying-glass button from the iPad capsule.
+old_ipad_search = """            Button { showDirectory = true } label: {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 19, weight: .medium))
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Search")
+"""
+generator = generator.replace(old_ipad_search, "", 1)
+# Six native tabs: Home, Search, Moments, Upload, Chat, Profile.
+generator = generator.replace(
+    "        .home, .moments, .upload, .messages, .channel",
+    "        .home, .search, .moments, .upload, .messages, .channel",
+    1
+)
+generator = generator.replace(
+    '    private static let titles = ["Home", "Moments", "Upload", "Chat", "Profile"]',
+    '    private static let titles = ["Home", "Search", "Moments", "Upload", "Chat", "Profile"]',
+    1
+)
+generator = generator.replace(
+    """        "house.fill",
+        "play.rectangle.fill",
+        "plus.square.fill",""",
+    """        "house.fill",
+        "magnifyingglass",
+        "play.rectangle.fill",
+        "plus.square.fill",""",
+    1
+)
+# Search has its own NavigationStack so creator profiles push from Search too.
+generator = generator.replace(
+    """            AnyView(
+                ContentUnavailableView("Moments", systemImage: "play.rectangle",
+                    description: Text("Moments will appear here."))
+                    .environmentObject(store)
+            ),""",
+    """            AnyView(
+                NavigationStack {
+                    SearchScreen(selectChannel: { profile in selectedPublicChannel = profile })
+                        .navigationDestination(item: $selectedPublicChannel) { profile in
+                            PublicChannelScreen(profile: profile)
+                        }
+                }
+                .environmentObject(store)
+            ),
+            AnyView(
+                ContentUnavailableView("Moments", systemImage: "play.rectangle",
+                    description: Text("Moments will appear here."))
+                    .environmentObject(store)
+            ),""",
+    1
+)
+# HomeScreen's search action selects Search rather than opening the old sheet.
+generator_path.write_text(generator)
+
+print("Added Search as a sixth native tab and iPad navigation destination, changed the Home shortcut to select it with native Liquid Glass, and enlarged public creator typography.")
