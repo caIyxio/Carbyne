@@ -74,10 +74,25 @@ c = c[:start] + r'''struct PublicChannelScreen: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 12)
 
-                    Button(store.isSubscribed ? "Subscribed" : "Subscribe") {
+                    Button {
                         Task { await store.toggleSubscription() }
+                    } label: {
+                        Label(store.isSubscribed ? "Subscribed" : "Subscribe",
+                              systemImage: store.isSubscribed ? "checkmark" : "plus")
+                            .font(.system(size: 14, weight: .semibold))
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 10)
+                            .foregroundStyle(store.isSubscribed ? Color.primary : Color(uiColor: .systemBackground))
+                            .background {
+                                Capsule().fill(store.isSubscribed
+                                    ? Color(uiColor: .secondarySystemBackground)
+                                    : Color.primary)
+                            }
+                            .overlay {
+                                Capsule().strokeBorder(Color.primary.opacity(store.isSubscribed ? 0.16 : 0))
+                            }
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.plain)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 12)
 
@@ -155,6 +170,26 @@ c = c[:start] + r'''struct PublicChannelScreen: View {
     }
 }
 ''' + c[end:]
+# Home should be a clean feed: channel discovery lives in Search, not a second
+# Channels directory appended below the video feed.
+home_start = c.index("struct HomeScreen: View {")
+home_end = c.index("\nstruct MessagesScreen: View {", home_start)
+home = c[home_start:home_end]
+channels_section = """                if !store.channels.isEmpty {
+                    Text("Channels").font(.system(size: 21, weight: .semibold))
+                    ForEach(store.channels) { channel in
+                        Button { selectChannel(channel) } label: {
+                            ChannelRow(profile: channel, imageURL: store.publicImageURL(path: channel.avatarPath))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+"""
+if channels_section not in home:
+    raise SystemExit("Home Channels section anchor not found; refusing to patch an unknown layout.")
+home = home.replace(channels_section, "", 1)
+c = c[:home_start] + home + c[home_end:]
+
 cp.write_text(c)
 
 # Remove Search from the enum: only five real tabs remain.
@@ -184,11 +219,11 @@ t = t.replace(
         "person.crop.circle.fill"
     ]""",
     """    private static let symbols = [
-        "house.fill",
-        "play.rectangle.fill",
-        "plus.square.fill",
-        "bubble.left.and.bubble.right.fill",
-        "person.crop.circle.fill"
+        "house",
+        "play.rectangle",
+        "plus.circle.fill",
+        "bubble.left.and.bubble.right",
+        "person.crop.circle"
     ]""",
 )
 t = t.replace(
