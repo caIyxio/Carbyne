@@ -236,6 +236,10 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
         return roots.enumerated().map { index, root in
             let host = UIHostingController(rootView: root)
             host.view.backgroundColor = .clear
+            // The Profile tab must render edge-to-edge, including behind the
+            // status bar and the bottom home-indicator region. Other tabs retain
+            // normal safe-area behavior.
+            host.safeAreaRegions = index == 4 ? [] : .all
             host.view.restorationIdentifier = "Carbyne.Tab.\(Self.titles[index])"
             host.tabBarItem = UITabBarItem(
                 title: Self.titles[index],
