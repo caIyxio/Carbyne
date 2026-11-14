@@ -38,24 +38,6 @@ profile = r'''struct ChannelScreen: View {
             if let profile = store.profile, store.session != nil {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        HStack {
-                            Text("Profile").font(.system(size: 17, weight: .semibold))
-                            Spacer()
-                            Menu {
-                                Button("Edit profile", systemImage: "pencil", action: openEditor)
-                                Button("Security / 2FA", systemImage: "lock.shield", action: openSecurity)
-                                Button("Sign out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
-                                    Task { await store.signOut() }
-                                }
-                            } label: {
-                                Image(systemName: "ellipsis")
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .frame(width: 40, height: 40)
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 4)
-
                         AsyncImage(url: store.publicImageURL(path: profile.bannerPath)) { phase in
                             if let image = phase.image {
                                 image.resizable().scaledToFill()
@@ -64,7 +46,7 @@ profile = r'''struct ChannelScreen: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: 150)
+                        .aspectRatio(3.0, contentMode: .fit)
                         .clipped()
 
                         HStack(alignment: .top, spacing: 12) {
@@ -135,7 +117,7 @@ profile = r'''struct ChannelScreen: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .background(Color(uiColor: .systemBackground))
-                .ignoresSafeArea(edges: .horizontal)
+                .ignoresSafeArea(edges: [.top, .horizontal])
             } else {
                 ContentUnavailableView("Your Profile", systemImage: "person.crop.circle",
                     description: Text("Sign in to view and edit your profile."))
