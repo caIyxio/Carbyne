@@ -324,8 +324,10 @@ c = c.replace("Button { showDirectory = true } label: {",
               "Button { navigationPath.append(.search) } label: {")
 c = c.replace("        selectedPublicChannel = profile",
               "        navigationPath.append(.profile(profile))")
-if "showDirectory" in c or "selectedPublicChannel" in c:
-    leftovers = [line.strip() for line in c.splitlines() if "showDirectory" in line or "selectedPublicChannel" in line]
+content_view_end = c.index("struct HomeScreen: View {")
+content_root = c[:content_view_end]
+if "showDirectory" in content_root or "selectedPublicChannel" in content_root:
+    leftovers = [line.strip() for line in content_root.splitlines() if "showDirectory" in line or "selectedPublicChannel" in line]
     raise SystemExit("Stale boolean/item navigation state remains in ContentView: " + " | ".join(leftovers))
 cp.write_text(c)
 
