@@ -45,7 +45,7 @@ jobs:
           if [ -z "$SOURCE_DIR" ]; then SOURCE_DIR="$(dirname "$PROJECT_YML")"; fi
           ASSET_DIR="$SOURCE_DIR/Assets.xcassets/AppIcon.appiconset"
           mkdir -p "$ASSET_DIR"
-          base64 --decode .github/assets/carbyne-app-icon.png.b64 > "$RUNNER_TEMP/CarbyneIcon256.png"
+          base64 -D -i .github/assets/carbyne-app-icon.png.b64 -o "$RUNNER_TEMP/CarbyneIcon256.png"
           sips -s format png -z 1024 1024 "$RUNNER_TEMP/CarbyneIcon256.png" --out "$ASSET_DIR/CarbyneAppIcon.png" >/dev/null
           cat > "$ASSET_DIR/Contents.json" <<'JSON'
           {
