@@ -49,8 +49,10 @@ replacement = r'''struct ContentView: View {
                                   openEditor: { showProfileEditor = true },
                                   openSecurity: { showSecurity = true })
                         .tabItem {
-                            AvatarView(url: store.publicImageURL(path: store.profile?.avatarPath), size: 25)
-                            Text("Profile")
+                            // UITab items must be lightweight native label content.
+                            // Embedding AvatarView/AsyncImage here can make SwiftUI reuse
+                            // a hosted UIKit controller across UITab instances and crash.
+                            Label("Profile", systemImage: "person.crop.circle.fill")
                         }
                         .tag(CarbyneTab.channel)
                 }
