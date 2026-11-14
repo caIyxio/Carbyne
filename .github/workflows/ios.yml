@@ -94,6 +94,8 @@ jobs:
               p.write_text(text)
           print("Carbyne app icon asset catalog installed.")
           PY
+      - name: Set app version and monotonic build number
+        run: python3 .github/scripts/set-app-version.py
       - name: Apply Supabase Swift SDK storage compatibility patch
         run: python3 .github/scripts/patch-supabase-storage-api.py
       - name: Select Xcode
