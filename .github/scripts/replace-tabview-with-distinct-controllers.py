@@ -81,8 +81,8 @@ content_view = r'''struct ContentView: View {
             Button {
                 openOwnProfile()
             } label: {
-                AvatarView(url: store.publicImageURL(path: store.profile?.avatarPath), size: 30)
-                    .padding(.horizontal, 10).padding(.vertical, 8)
+                AvatarView(url: store.publicImageURL(path: store.profile?.avatarPath), size: 20)
+                    .padding(.horizontal, 6).padding(.vertical, 5)
                     .background(selectedTab == .channel ? Color.primary.opacity(0.08) : .clear, in: Capsule())
             }
             .buttonStyle(.plain)
@@ -189,10 +189,6 @@ struct CarbyneNativeTabController: UIViewControllerRepresentable {
 
         controller.setViewControllers(children, animated: false)
         controller.selectedIndex = selectedIndex
-        context.coordinator.updateAvatar(
-            url: store.publicImageURL(path: store.profile?.avatarPath),
-            item: controller.tabBar.items?.last
-        )
 
         // Do not set standardAppearance or scrollEdgeAppearance here. UIKit owns
         // the native tab bar appearance, including Liquid Glass on iOS 26+.
