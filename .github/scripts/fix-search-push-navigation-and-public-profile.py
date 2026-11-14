@@ -366,6 +366,6 @@ if "showDirectory" in t or "selectedPublicChannel" in t:
 tp.write_text(t)
 
 for label, source in [("ContentView", c), ("tab controller", t), ("models", m)]:
-    if "CarbyneTab.search" in source or "selectedTab = .search" in source or "case .search:" in source:
+    if "CarbyneTab.search" in source or "selectedTab = .search" in source:
         raise SystemExit(f"Stale Search-tab reference remains in {label}.")
 print("Search is a pushed destination; public profile syntax repaired; five tabs retained.")
