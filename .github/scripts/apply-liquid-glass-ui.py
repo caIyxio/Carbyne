@@ -12,7 +12,11 @@ struct ContentView: View {
  @EnvironmentObject private var store: CarbyneStore
  @Environment(\\.horizontalSizeClass) private var sizeClass
  @State private var selectedTab: CarbyneTab = .home
- @State private var showDirectory=false, showAuth=false, showProfileEditor=false, showSecurity=false, showAlert=false
+ @State private var showDirectory = false
+ @State private var showAuth = false
+ @State private var showProfileEditor = false
+ @State private var showSecurity = false
+ @State private var showAlert = false
  private var isPad: Bool { sizeClass == .regular }
  var body: some View {
   VStack(spacing:0) {
@@ -41,6 +45,7 @@ struct HomeScreen: View {
  LazyVGrid(columns:isPad ? [GridItem(.flexible()),GridItem(.flexible())] : [GridItem(.flexible())],spacing:28){ForEach(cards,id:\\.0){card in VStack(alignment:.leading,spacing:9){RoundedRectangle(cornerRadius:24).fill(Color(uiColor:.systemGray5)).aspectRatio(isPad ? 1.55 : 1.32,contentMode:.fit).overlay(Image(systemName:"play.rectangle").font(.system(size:28,weight:.light)).foregroundStyle(.tertiary));HStack(spacing:12){Circle().fill(Color(uiColor:.systemGray4)).frame(width:isPad ? 38:58,height:isPad ? 38:58);VStack(alignment:.leading,spacing:2){Text(card.0).font(.system(size:isPad ? 14:17,weight:.semibold)).lineLimit(1);Text(card.1).foregroundStyle(.secondary);Text(card.2).foregroundStyle(.tertiary)}.font(.system(size:isPad ? 12:14));Spacer(minLength:0)} } } }
  if !store.channels.isEmpty { Text("Channels").font(.system(size:21,weight:.semibold));ForEach(store.channels){channel in Button{selectChannel(channel)}label:{ChannelRow(profile:channel,imageURL:store.publicImageURL(path:channel.avatarPath))}.buttonStyle(.plain)} }
  }.padding(.horizontal,isPad ? 34:20).padding(.top,12).padding(.bottom,30).frame(maxWidth:1200).frame(maxWidth:.infinity) }.task{await store.loadChannels()}.refreshable{await store.loadChannels()} }
+}
 '''
 s=s[:start]+new+s[end:]
 p.write_text(s)
