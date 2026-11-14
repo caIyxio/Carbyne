@@ -246,9 +246,14 @@ search_root = """            AnyView(
                 .environmentObject(store)
             ),
 """
-if search_root not in t:
-    raise SystemExit("Expected standalone Search tab root was not found; refusing to guess.")
-t = t.replace(search_root, "")
+# The five-tab generator may already have removed the old standalone Search
+# root. In that case Search must exist only as a pushed destination from Home.
+if search_root in t:
+    t = t.replace(search_root, "")
+elif 'SearchScreen(selectChannel: { profile in selectedPublicChannel = profile })' not in t:
+    raise SystemExit("Search destination is missing from the Home navigation stack.")
+if ".search" in t.split("private static let symbols", 1)[0]:
+    raise SystemExit("A standalone Search tab is still configured; refusing to leave duplicate navigation.")
 tp.write_text(t)
 
 for label, source in [("ContentView", c), ("tab controller", t), ("models", m)]:
