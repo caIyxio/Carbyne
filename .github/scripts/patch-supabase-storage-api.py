@@ -35,11 +35,11 @@ old_message_upload = """                try await supabase.storage.from("message
 new_message_upload = """                _ = try await supabase.storage.from("message-attachments").upload(
                     path!,
                     data: attachmentData,
-                    options: FileOptions(cacheControl: "3600", contentType: mimeType ?? "application/octet-stream", upsert: false)
+                    options: FileOptions(cacheControl: "86400", contentType: mimeType ?? "application/octet-stream", upsert: false)
                 )"""
 if old_message_upload in source:
     source = source.replace(old_message_upload, new_message_upload, 1)
-elif 'options: FileOptions(cacheControl: "3600", contentType: mimeType ?? "application/octet-stream", upsert: false)' not in source:
+elif 'options: FileOptions(cacheControl: "86400", contentType: mimeType ?? "application/octet-stream", upsert: false)' not in source:
     raise SystemExit("Expected message attachment upload was not found; refusing to patch an unexpected source file.")
 
 source_path.write_text(source)
