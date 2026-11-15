@@ -68,6 +68,8 @@ jobs:
         run: python3 .github/scripts/add-chat-media-waveforms-transcription-and-account-loading.py
       - name: Cache chat photos, preserve aspect ratio and retry speech interruptions
         run: python3 .github/scripts/fix-chat-attachment-cache-aspect-and-transcription.py
+      - name: Fix custom profile images and speed up image and data loading
+        run: python3 .github/scripts/fix-profile-images-and-app-loading.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
