@@ -80,6 +80,8 @@ jobs:
         run: python3 .github/scripts/fix-transparent-crop-corner-validation.py
       - name: Crop source pixels using the exact dragged viewport
         run: python3 .github/scripts/fix-dragged-crop-source-rect.py
+      - name: Keep crop preview and export transforms identical
+        run: python3 .github/scripts/fix-profile-crop-preview-transform.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
