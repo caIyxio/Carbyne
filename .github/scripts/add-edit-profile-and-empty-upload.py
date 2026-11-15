@@ -180,7 +180,6 @@ struct EditProfileView: View {
                             errorText = nil
                             do {
                                 try await store.saveProfile(displayName: displayName, username: username, bio: bio)
-                                await store.loadProfile()
                                 dismiss()
                             } catch {
                                 errorText = error.localizedDescription
@@ -225,6 +224,8 @@ next_struct = content.find("\nstruct ", start + len("struct UploadScreen: View {
 if next_struct == -1:
     raise SystemExit("Could not find the end of UploadScreen.")
 content = content[:start] + """struct UploadScreen: View {
+    let openAuth: () -> Void
+
     var body: some View {
         Color.clear
             .ignoresSafeArea()
