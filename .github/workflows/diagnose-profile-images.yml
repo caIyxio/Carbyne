@@ -19,69 +19,181 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://vezpcrvdswyvcwdzyxnr.supabase.co/storage/v1/object/public/avatars/db2ff8ff-242b-4774-a0b3-13faeddcf583"
-          curl --fail --silent --show-error --location --max-time 30 "$BASE/avatar-050d097e-a513-4792-b7b2-8247cf0bc51d.jpg" -o "$RUNNER_TEMP/avatar.jpg"
-          curl --fail --silent --show-error --location --max-time 30 "$BASE/banner-197aaa01-4554-4b47-82bb-c5587b3db784.jpg" -o "$RUNNER_TEMP/banner.jpg"
-          cat > "$RUNNER_TEMP/inspect.swift" <<'SWIFT'
-          import Foundation
-          import ImageIO
-          import CoreGraphics
+          mkdir -p "$RUNNER_TEMP/ImageRenderProbe/Resources" "$RUNNER_TEMP/ImageRenderProbe/Sources"
+          curl --fail --silent --show-error --location --max-time 30 "$BASE/avatar-050d097e-a513-4792-b7b2-8247cf0bc51d.jpg" -o "$RUNNER_TEMP/ImageRenderProbe/Resources/avatar.jpg"
+          curl --fail --silent --show-error --location --max-time 30 "$BASE/banner-197aaa01-4554-4b47-82bb-c5587b3db784.jpg" -o "$RUNNER_TEMP/ImageRenderProbe/Resources/banner.jpg"
+          cat > "$RUNNER_TEMP/ImageRenderProbe/project.yml" <<'YAML'
+          name: ImageRenderProbe
+          options:
+            bundleIdPrefix: com.carbyne
+            deploymentTarget:
+              iOS: "17.0"
+          targets:
+            ImageRenderProbe:
+              type: application
+              platform: iOS
+              sources:
+                - Sources
+              resources:
+                - Resources
+              settings:
+                base:
+                  PRODUCT_BUNDLE_IDENTIFIER: com.carbyne.ImageRenderProbe
+                  GENERATE_INFOPLIST_FILE: YES
+                  SWIFT_VERSION: "6.0"
+          YAML
+          cat > "$RUNNER_TEMP/ImageRenderProbe/Sources/ImageRenderProbeApp.swift" <<'SWIFT'
+          import SwiftUI
 
-          func report(_ label: String, _ image: CGImage) {
-              let width = image.width
-              let height = image.height
-              let count = width * height
-              var bytes = [UInt8](repeating: 0, count: count * 4)
-              bytes.withUnsafeMutableBytes { raw in
-                  let context = CGContext(
-                      data: raw.baseAddress,
-                      width: width,
-                      height: height,
-                      bitsPerComponent: 8,
-                      bytesPerRow: width * 4,
-                      space: CGColorSpaceCreateDeviceRGB(),
-                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-                  )!
-                  context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-              }
-              var total = 0.0
-              var black = 0
-              var bright = 0
-              var minimum = 255
-              var maximum = 0
-              for i in stride(from: 0, to: bytes.count, by: 4) {
-                  let r = Int(bytes[i])
-                  let g = Int(bytes[i + 1])
-                  let b = Int(bytes[i + 2])
-                  let luma = (0.2126 * Double(r)) + (0.7152 * Double(g)) + (0.0722 * Double(b))
-                  total += luma
-                  minimum = min(minimum, r, g, b)
-                  maximum = max(maximum, r, g, b)
-                  if luma < 8 { black += 1 }
-                  if luma > 200 { bright += 1 }
-              }
-              print("\(label): \(width)x\(height), average_luma=\(String(format: "%.2f", total / Double(count))), near_black=\(String(format: "%.2f", 100 * Double(black) / Double(count)))%, bright=\(String(format: "%.2f", 100 * Double(bright) / Double(count)))%, channel_min=\(minimum), channel_max=\(maximum)")
-          }
-
-          for path in CommandLine.arguments.dropFirst() {
-              let url = URL(fileURLWithPath: path)
-              let data = try Data(contentsOf: url)
-              guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-                    let full = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
-                  fatalError("Could not decode original JPEG: \(path)")
-              }
-              let label = url.lastPathComponent
-              print("\(label): bytes=\(data.count)")
-              report("\(label) original", full)
-              let options: [CFString: Any] = [
-                  kCGImageSourceCreateThumbnailFromImageAlways: true,
-                  kCGImageSourceCreateThumbnailWithTransform: true,
-                  kCGImageSourceThumbnailMaxPixelSize: 1400
-              ]
-              if let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) {
-                  report("\(label) ImageIO-thumbnail", thumbnail)
-              } else {
-                  print("\(label): ImageIO thumbnail creation FAILED")
+          @main
+          struct ImageRenderProbeApp: App {
+              var body: some Scene {
+                  WindowGroup { ProbeView() }
               }
           }
           SWIFT
-          swift "$RUNNER_TEMP/inspect.swift" "$RUNNER_TEMP/avatar.jpg" "$RUNNER_TEMP/banner.jpg"
+          cat > "$RUNNER_TEMP/ImageRenderProbe/Sources/ProbeView.swift" <<'SWIFT'
+          import SwiftUI
+          import UIKit
+          import ImageIO
+          import CoreImage
+
+          struct ProbeView: View {
+              @State private var status = "Inspecting"
+              var body: some View {
+                  VStack(spacing: 8) {
+                      Text("Profile image rendering probe")
+                      Text(status)
+                  }
+                  .frame(maxWidth: .infinity, maxHeight: .infinity)
+                  .background(.white)
+                  .task { runProbe() }
+              }
+
+              @MainActor
+              private func runProbe() {
+                  var lines: [String] = []
+                  func pixels(_ cg: CGImage) -> String {
+                      let width = cg.width
+                      let height = cg.height
+                      let count = width * height
+                      var buffer = [UInt8](repeating: 0, count: count * 4)
+                      buffer.withUnsafeMutableBytes { raw in
+                          let context = CGContext(
+                              data: raw.baseAddress,
+                              width: width,
+                              height: height,
+                              bitsPerComponent: 8,
+                              bytesPerRow: width * 4,
+                              space: CGColorSpaceCreateDeviceRGB(),
+                              bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                          )!
+                          context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
+                      }
+                      var sum = 0.0
+                      var black = 0
+                      for index in stride(from: 0, to: buffer.count, by: 4) {
+                          let y = 0.2126 * Double(buffer[index])
+                              + 0.7152 * Double(buffer[index + 1])
+                              + 0.0722 * Double(buffer[index + 2])
+                          sum += y
+                          if y < 8 { black += 1 }
+                      }
+                      return "\(width)x\(height) avg=\(String(format: "%.2f", sum / Double(count))) black=\(String(format: "%.2f", 100 * Double(black) / Double(count)))%"
+                  }
+
+                  func inspect(_ label: String, _ image: UIImage, size: CGSize) {
+                      if let cg = image.cgImage {
+                          lines.append("\(label) UIImage.CGImage: \(pixels(cg)) colorspace=\(cg.colorSpace?.name.map { $0 as String } ?? "nil") model=\(cg.colorSpace?.model.rawValue ?? -99)")
+                          let renderer = UIGraphicsImageRenderer(size: size)
+                          let drawn = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+                          if let output = drawn.cgImage { lines.append("\(label) UIKit-draw: \(pixels(output))") }
+
+                          let view = Image(uiImage: image)
+                              .resizable()
+                              .scaledToFill()
+                              .frame(width: size.width, height: size.height)
+                              .clipped()
+                              .background(Color.white)
+                          let swiftRenderer = ImageRenderer(content: view)
+                          swiftRenderer.proposedSize = ProposedViewSize(width: size.width, height: size.height)
+                          swiftRenderer.scale = 1
+                          if let output = swiftRenderer.uiImage?.cgImage {
+                              lines.append("\(label) SwiftUI-ImageRenderer: \(pixels(output))")
+                          } else {
+                              lines.append("\(label) SwiftUI-ImageRenderer: FAILED")
+                          }
+                      } else {
+                          lines.append("\(label): UIImage has no CGImage")
+                      }
+                  }
+
+                  for name in ["avatar", "banner"] {
+                      guard let url = Bundle.main.url(forResource: name, withExtension: "jpg"),
+                            let data = try? Data(contentsOf: url) else {
+                          lines.append("\(name): missing bundled JPEG")
+                          continue
+                      }
+                      lines.append("\(name): bytes=\(data.count)")
+                      let target = name == "avatar" ? CGSize(width: 200, height: 200) : CGSize(width: 360, height: 120)
+                      if let direct = UIImage(data: data) {
+                          inspect("\(name) UIImage(data:)", direct, size: target)
+                      } else {
+                          lines.append("\(name) UIImage(data:): FAILED")
+                      }
+
+                      if let source = CGImageSourceCreateWithData(data as CFData, nil) {
+                          let options: [CFString: Any] = [
+                              kCGImageSourceCreateThumbnailFromImageAlways: true,
+                              kCGImageSourceCreateThumbnailWithTransform: true,
+                              kCGImageSourceThumbnailMaxPixelSize: 1400
+                          ]
+                          if let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) {
+                              inspect("\(name) ImageIO-thumbnail", UIImage(cgImage: cg, scale: 1, orientation: .up), size: target)
+                          } else {
+                              lines.append("\(name) ImageIO-thumbnail: FAILED")
+                          }
+                      }
+
+                      if let ci = CIImage(data: data),
+                         let space = CGColorSpace(name: CGColorSpace.sRGB),
+                         let cg = CIContext(options: [.outputColorSpace: space]).createCGImage(ci, from: ci.extent) {
+                          inspect("\(name) CIContext-sRGB", UIImage(cgImage: cg, scale: 1, orientation: .up), size: target)
+                      } else {
+                          lines.append("\(name) CIContext-sRGB: FAILED")
+                      }
+                  }
+
+                  let report = lines.joined(separator: "\n")
+                  let destination = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                      .appendingPathComponent("report.txt")
+                  try? report.write(to: destination, atomically: true, encoding: .utf8)
+                  status = "Report written"
+                  print(report)
+              }
+          }
+          SWIFT
+          if ! command -v xcodegen >/dev/null 2>&1; then brew install xcodegen; fi
+          cd "$RUNNER_TEMP/ImageRenderProbe"
+          xcodegen generate
+          UDID="$(python3 - <<'PY'
+          import json, subprocess
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))
+          for devices in data["devices"].values():
+              for device in devices:
+                  if device.get("isAvailable") and device["name"].startswith("iPhone"):
+                      print(device["udid"])
+                      raise SystemExit(0)
+          raise SystemExit("No available iPhone simulator")
+          PY
+          )"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcodebuild -quiet -project ImageRenderProbe.xcodeproj -scheme ImageRenderProbe -destination "id=$UDID" -derivedDataPath "$RUNNER_TEMP/ImageRenderProbeDerived" CODE_SIGNING_ALLOWED=NO build
+          APP="$RUNNER_TEMP/ImageRenderProbeDerived/Build/Products/Debug-iphonesimulator/ImageRenderProbe.app"
+          xcrun simctl install "$UDID" "$APP"
+          xcrun simctl launch "$UDID" com.carbyne.ImageRenderProbe
+          sleep 5
+          APP_DATA="$(xcrun simctl get_app_container "$UDID" com.carbyne.ImageRenderProbe data)"
+          echo "=== iOS Simulator UIImage / UIKit / SwiftUI decode report ==="
+          cat "$APP_DATA/Documents/report.txt"
