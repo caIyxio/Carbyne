@@ -399,18 +399,15 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
     @Published private(set) var isPlaying = false
     @Published private(set) var duration: TimeInterval = 0
     @Published private(set) var waveform: [CGFloat] = []
+    @Published private(set) var progress: Double = 0
     @Published private(set) var transcript: String?
     @Published private(set) var isTranscribing = false
     private var player: AVAudioPlayer?
+    private var progressTimer: Timer?
 
     var formattedDuration: String {
         let seconds = Int(duration)
         return String(format: "%d:%02d", seconds / 60, seconds % 60)
-    }
-
-    var progress: Double {
-        guard let player, player.duration > 0 else { return 0 }
-        return min(max(player.currentTime / player.duration, 0), 1)
     }
 
     func prepare(url: URL) async throws {
@@ -430,8 +427,16 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
     func toggle(url: URL) async throws {
         if player == nil { try await prepare(url: url) }
         guard let player else { return }
-        if isPlaying { player.pause(); isPlaying = false }
-        else { player.play(); isPlaying = true }
+        if isPlaying {
+            player.pause()
+            isPlaying = false
+            progressTimer?.invalidate()
+            progressTimer = nil
+        } else {
+            player.play()
+            isPlaying = true
+            startProgressUpdates()
+        }
     }
 
     func transcribe(url: URL) async throws {
@@ -453,14 +458,25 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
         let localURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".m4a")
         try data.write(to: localURL)
         defer { try? FileManager.default.removeItem(at: localURL) }
-        transcript = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
+        let recognizedText: String = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
             let request = SFSpeechURLRecognitionRequest(url: localURL)
-            request.shouldReportPartialResults = false
+            request.taskHint = .dictation
+            request.shouldReportPartialResults = true
             recognizer.recognitionTask(with: request) { result, error in
-                if let error { continuation.resume(throwing: error) }
-                else if let result, result.isFinal { continuation.resume(returning: result.bestTranscription.formattedString) }
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let result, result.isFinal {
+                    let text = result.bestTranscription.formattedString.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if text.isEmpty {
+                        continuation.resume(throwing: NSError(domain: "CarbyneSpeech", code: 2,
+                            userInfo: [NSLocalizedDescriptionKey: "No speech could be recognized in this voice note."]))
+                    } else {
+                        continuation.resume(returning: text)
+                    }
+                }
             }
         }
+        transcript = recognizedText
     }
 
     private static func makeWaveform(from data: Data) -> [CGFloat] {
@@ -488,6 +504,9 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
 
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         isPlaying = false
+        progressTimer?.invalidate()
+        progressTimer = nil
+        progress = 1
         player.currentTime = 0
     }
 }
