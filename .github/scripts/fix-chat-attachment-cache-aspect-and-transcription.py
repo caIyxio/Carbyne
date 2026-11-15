@@ -299,11 +299,6 @@ new_transcribe = r"""    func transcribe(url: URL) async throws {
             }
             return try await transcribe(url: url)
         }
-        guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else {
-            throw NSError(domain: "Carbyne", code: 503,
-                          userInfo: [NSLocalizedDescriptionKey: "Apple speech recognition is currently unavailable. Please try again shortly."])
-        }
-
         isTranscribing = true
         defer {
             isTranscribing = false
@@ -318,10 +313,23 @@ new_transcribe = r"""    func transcribe(url: URL) async throws {
         defer { try? FileManager.default.removeItem(at: localURL) }
 
         if #available(iOS 26.0, *) {
-            transcript = try await transcribeWithSpeechAnalyzer(at: localURL)
-            return
+            do {
+                transcript = try await transcribeWithSpeechAnalyzer(at: localURL)
+                return
+            } catch {
+                let speechError = error as NSError
+                guard speechError.domain == "CarbyneSpeech", speechError.code == 4 else {
+                    throw error
+                }
+                // If the current language is not available in SpeechAnalyzer,
+                // continue with the compatible legacy recognizer below.
+            }
         }
 
+        guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else {
+            throw NSError(domain: "Carbyne", code: 503,
+                          userInfo: [NSLocalizedDescriptionKey: "Apple speech recognition is currently unavailable. Please try again shortly."])
+        }
         let useOnDeviceFirst = recognizer.supportsOnDeviceRecognition
         let recognizedText: String
         do {
@@ -368,7 +376,8 @@ new_transcribe = r"""    func transcribe(url: URL) async throws {
             await analyzer.cancelAndFinishNow()
         }
 
-        let recognized = try await transcriptionFuture.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fullText = try await transcriptionFuture
+        let recognized = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !recognized.isEmpty else {
             throw NSError(domain: "CarbyneSpeech", code: 2,
                           userInfo: [NSLocalizedDescriptionKey: "No speech could be recognized in this voice note."])
