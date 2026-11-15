@@ -61,14 +61,7 @@ content = replace_once(content,
                 NavigationLink {
                     PublicChannelScreen(profile: profile)
                 } label: {
-                    VStack(spacing: 4) {
-                        AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 56)
-                        Text(profile.title)
-                            .font(.system(size: 13, weight: .semibold))
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 82, alignment: .center)
-                    .contentShape(Rectangle())
+                    EmptyView()
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Open \(profile.title)'s profile")
@@ -96,6 +89,56 @@ content = replace_once(content,
         .navigationBarTitleDisplayMode(.inline)
         .id(profile.id)
         .toolbar {""", "unique conversation navigation identity")
+
+# Use a real in-content header because UINavigationBar constrains toolbar principal height.
+content = replace_once(content,
+    """struct ChatThreadScreen: View {
+    @EnvironmentObject private var store: CarbyneStore""",
+    """struct ChatThreadScreen: View {
+    @Environment(\\.dismiss) private var dismiss
+    @EnvironmentObject private var store: CarbyneStore""", "chat header dismiss environment")
+content = replace_once(content,
+    """        VStack(spacing: 0) {
+            ScrollViewReader { proxy in""",
+    """        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 0) {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 17, weight: .semibold))
+                        .frame(width: 40, height: 40)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Spacer(minLength: 0)
+                NavigationLink {
+                    PublicChannelScreen(profile: profile)
+                } label: {
+                    VStack(spacing: 7) {
+                        AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 68)
+                        Text(profile.title)
+                            .font(.system(size: 14, weight: .semibold))
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Spacer(minLength: 0)
+                Color.clear.frame(width: 40, height: 40)
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+            .frame(maxWidth: .infinity, minHeight: 122)
+            .background(.ultraThinMaterial)
+
+            ScrollViewReader { proxy in""", "expanded centered in-content chat header")
+content = replace_once(content,
+    """        .navigationBarTitleDisplayMode(.inline)
+        .id(profile.id)""",
+    """        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
+        .id(profile.id)""", "hide constrained navigation bar")
 
 # Select images and videos from Photos; the selected video is uploaded as an attachment.
 content = replace_once(content,
@@ -138,6 +181,9 @@ new_bubble = """struct MessageBubble: View {
     @State private var attachmentURL: URL?
     @State private var showMedia = false
     @State private var isVideo = false
+    private var isImageAttachment: Bool {
+        message.messageType == "attachment" && message.attachmentMimeType?.hasPrefix("image/") == true
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
@@ -163,12 +209,12 @@ new_bubble = """struct MessageBubble: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 13)
-        .padding(.vertical, 10)
+        .padding(.horizontal, isImageAttachment ? 0 : 13)
+        .padding(.vertical, isImageAttachment ? 0 : 10)
         .foregroundStyle(isOutgoing ? Color.white : Color.primary)
-        .background(isOutgoing ? Color.accentColor : Color(uiColor: .secondarySystemBackground),
+        .background(isImageAttachment ? Color.clear : (isOutgoing ? Color.accentColor : Color(uiColor: .secondarySystemBackground)),
                     in: RoundedRectangle(cornerRadius: 17))
-        .frame(maxWidth: 270, alignment: isOutgoing ? .trailing : .leading)
+        .frame(maxWidth: isImageAttachment ? 230 : 270, alignment: isOutgoing ? .trailing : .leading)
         .task(id: message.attachmentPath) {
             guard let path = message.attachmentPath,
                   message.messageType != "voice_note" else { return }
@@ -221,7 +267,6 @@ struct AttachmentThumbnail: View {
             }
         }
         .frame(maxWidth: 230)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.clear, lineWidth: 0))
         .accessibilityLabel(mimeType?.hasPrefix("video/") == true ? "Video attachment preview" : "Photo attachment preview")
     }
 
@@ -403,6 +448,7 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
     @Published private(set) var transcript: String?
     @Published private(set) var isTranscribing = false
     private var player: AVAudioPlayer?
+    private var recognitionTask: SFSpeechRecognitionTask?
     private var progressTimer: Timer?
 
     var formattedDuration: String {
@@ -471,10 +517,14 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
         let recognizedText: String = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
             let request = SFSpeechURLRecognitionRequest(url: localURL)
             request.taskHint = .dictation
-            request.shouldReportPartialResults = true
-            recognizer.recognitionTask(with: request) { result, error in
+            request.shouldReportPartialResults = false
+            if recognizer.supportsOnDeviceRecognition {
+                request.requiresOnDeviceRecognition = true
+            }
+            self.recognitionTask = recognizer.recognitionTask(with: request) { result, error in
                 if let error {
                     continuation.resume(throwing: error)
+                    Task { @MainActor in self.recognitionTask = nil }
                 } else if let result, result.isFinal {
                     let text = result.bestTranscription.formattedString.trimmingCharacters(in: .whitespacesAndNewlines)
                     if text.isEmpty {
@@ -483,9 +533,12 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
                     } else {
                         continuation.resume(returning: text)
                     }
+                    Task { @MainActor in self.recognitionTask = nil }
                 }
             }
         }
+        recognitionTask?.cancel()
+        recognitionTask = nil
         transcript = recognizedText
     }
 
