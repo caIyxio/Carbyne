@@ -249,6 +249,17 @@ end = content.index("\nstruct PublicChannelScreen: View {", start)
 channel = content[start:end]
 channel = replace_once(
     channel,
+    """                .background(Color.clear)
+                .coordinateSpace(name: "profileScroll")
+            } else {""",
+    """                .background(Color.clear)
+                .coordinateSpace(name: "profileScroll")
+                .ignoresSafeArea(.container, edges: .top)
+            } else {""",
+    "own profile banner edge-to-edge layout"
+)
+channel = replace_once(
+    channel,
     """    @State private var selectedSection = "Home"
 
     var body: some View {
