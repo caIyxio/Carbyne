@@ -244,7 +244,7 @@ messaging_methods = """
                     throw NSError(domain: "Carbyne", code: 413, userInfo: [NSLocalizedDescriptionKey: "Attachments must be 25 MB or smaller."])
                 }
                 let name = (fileName ?? "attachment").replacingOccurrences(of: "/", with: "_")
-                path = "\\(userID.uuidString)/\\(peer.id.uuidString)/\\(UUID().uuidString)-\\(name)"
+                path = "\\(userID.uuidString.lowercased())/\\(peer.id.uuidString.lowercased())/\\(UUID().uuidString)-\\(name)"
                 try await supabase.storage.from("message-attachments").upload(
                     path: path!,
                     data: attachmentData,
