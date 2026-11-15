@@ -439,6 +439,16 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
         }
     }
 
+    private func startProgressUpdates() {
+        progressTimer?.invalidate()
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.06, repeats: true) { [weak self] _ in
+            guard let self, let player = self.player else { return }
+            self.progress = player.duration > 0
+                ? min(max(player.currentTime / player.duration, 0), 1)
+                : 0
+        }
+    }
+
     func transcribe(url: URL) async throws {
         guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
             let status = await withCheckedContinuation { continuation in
