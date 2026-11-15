@@ -47,7 +47,7 @@ jobs:
           @main
           struct ProbeApp: App {
               var body: some Scene {
-                  WindowGroup { ProbeTabController() }
+                  WindowGroup { ProbeTabController().preferredColorScheme(.light) }
               }
           }
           SWIFT
@@ -339,7 +339,7 @@ jobs:
                               } else {
                                   iconSummary = "no cgImage"
                               }
-                              await ProbeReporter.append("tab avatar assigned: \\(iconSummary)")
+                              await ProbeReporter.append("tab avatar assigned: " + iconSummary)
                           } catch {
                               await ProbeReporter.append("tab avatar error: \(error.localizedDescription)")
                           }
