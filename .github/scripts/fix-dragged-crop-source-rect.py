@@ -61,9 +61,9 @@ replacement = r'''    private func renderCrop() throws -> UIImage {
         // Keep the preview's fractional position, rounding only to source pixels.
         let minX = floor(rawRect.minX)
         let minY = floor(rawRect.minY)
-        let maxX = ceil(rawRect.maxX)
-        let maxY = ceil(rawRect.maxY)
-        let pixelRect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+        let pixelMaxX = ceil(rawRect.maxX)
+        let pixelMaxY = ceil(rawRect.maxY)
+        let pixelRect = CGRect(x: minX, y: minY, width: pixelMaxX - minX, height: pixelMaxY - minY)
         let cropRect = pixelRect.intersection(imageBounds)
         guard cropRect.width >= 1, cropRect.height >= 1,
               let croppedCG = sourceCG.cropping(to: cropRect) else {
