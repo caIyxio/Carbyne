@@ -177,7 +177,7 @@ messaging_methods = """
         do {
             let records: [CarbyneMessage] = try await supabase.from("messages")
                 .select()
-                .or("sender_id.eq.\\\\(userID.uuidString),recipient_id.eq.\\\\(userID.uuidString)")
+                .or("sender_id.eq.\\(userID.uuidString),recipient_id.eq.\\(userID.uuidString)")
                 .order("created_at", ascending: false)
                 .limit(300)
                 .execute().value
@@ -244,7 +244,7 @@ messaging_methods = """
                     throw NSError(domain: "Carbyne", code: 413, userInfo: [NSLocalizedDescriptionKey: "Attachments must be 25 MB or smaller."])
                 }
                 let name = (fileName ?? "attachment").replacingOccurrences(of: "/", with: "_")
-                path = "\\\\(userID.uuidString)/\\\\(peer.id.uuidString)/\\\\(UUID().uuidString)-\\\\(name)"
+                path = "\\(userID.uuidString)/\\(peer.id.uuidString)/\\(UUID().uuidString)-\\(name)"
                 try await supabase.storage.from("message-attachments").upload(
                     path: path!,
                     data: attachmentData,
@@ -275,7 +275,7 @@ messaging_methods = """
 
     func startMessagesRealtime() async {
         guard let userID = session?.user.id, messagesRealtimeChannel == nil else { return }
-        let channel = supabase.channel("carbyne-messages-\\\\(userID.uuidString)")
+        let channel = supabase.channel("carbyne-messages-\\(userID.uuidString)")
         let _ = channel.onPostgresChange(InsertAction.self, schema: "public", table: "messages") { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -307,12 +307,13 @@ sheets = sheets_path.read_text()
 crop_sheet = """
 struct ProfileImageCropSheet: View {
     @EnvironmentObject private var store: CarbyneStore
-    @Environment(\\\\.dismiss) private var dismiss
+    @Environment(\\.dismiss) private var dismiss
     let image: UIImage
     let kind: ProfileImageKind
     @State private var zoom: CGFloat = 1
     @State private var offset: CGSize = .zero
     @State private var dragOrigin: CGSize = .zero
+    @State private var cropAreaSize: CGSize = .zero
     @State private var isSaving = false
 
     private var aspect: CGFloat { kind == .avatar ? 1 : 3 }
@@ -361,13 +362,14 @@ struct ProfileImageCropSheet: View {
                                 dragOrigin = offset
                             }
                     )
+                    .onAppear { cropAreaSize = geometry.size }
                 }
                 .aspectRatio(aspect, contentMode: .fit)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Zoom")
                         Spacer()
-                        Text("\\\\(zoom, specifier: "%.1f")×").foregroundStyle(.secondary)
+                        Text("\\(zoom, specifier: "%.1f")×").foregroundStyle(.secondary)
                     }
                     Slider(value: $zoom, in: 1...4, step: 0.05)
                 }
@@ -381,6 +383,7 @@ struct ProfileImageCropSheet: View {
                 Button {
                     Task {
                         isSaving = true
+                        store.errorMessage = nil
                         let cropped = renderCrop()
                         await store.uploadProfileImage(cropped, kind: kind)
                         isSaving = false
@@ -406,10 +409,10 @@ struct ProfileImageCropSheet: View {
     private func renderCrop() -> UIImage {
         let normalized = image
         let target = kind == .avatar ? CGSize(width: 1080, height: 1080) : CGSize(width: 1500, height: 500)
-        let outputScale = target.width / 320
         let renderer = UIGraphicsImageRenderer(size: target)
         return renderer.image { _ in
-            let viewport = CGSize(width: 320, height: 320 / aspect)
+            let viewport = cropAreaSize == .zero ? CGSize(width: 320, height: 320 / aspect) : cropAreaSize
+            let outputScale = target.width / viewport.width
             let baseScale = max(viewport.width / normalized.size.width, viewport.height / normalized.size.height)
             let drawWidth = normalized.size.width * baseScale * zoom
             let drawHeight = normalized.size.height * baseScale * zoom
@@ -451,7 +454,7 @@ sheets = replace_once(
                     Text("Bio")
                     TextEditor(text: $bio)
                         .frame(minHeight: 90)
-                    Text("\\\\(bio.count)/160")
+                    Text("\\(bio.count)/160")
                         .font(.caption).foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
@@ -568,7 +571,7 @@ struct MessagesScreen: View {
 
 struct NewMessageSheet: View {
     @EnvironmentObject private var store: CarbyneStore
-    @Environment(\\\\.dismiss) private var dismiss
+    @Environment(\\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -763,7 +766,7 @@ final class CarbyneVoiceRecorder {
         try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
         try session.setActive(true)
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("carbyne-voice-\\\\(UUID().uuidString).m4a")
+            .appendingPathComponent("carbyne-voice-\\(UUID().uuidString).m4a")
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
             AVSampleRateKey: 44100,
@@ -831,11 +834,11 @@ content = replace_once(
 # Display bios on own/public profiles and their About sections.
 content = replace_once(
     content,
-    """                                Text("\\\\(store.subscriberCount) subscribers")
+    """                                Text("\\(store.subscriberCount) subscribers")
                                     .font(.system(size: 13))
                                     .foregroundStyle(.secondary)
                             }""",
-    """                                Text("\\\\(store.subscriberCount) subscribers")
+    """                                Text("\\(store.subscriberCount) subscribers")
                                     .font(.system(size: 13))
                                     .foregroundStyle(.secondary)
                                 if let bio = profile.bio, !bio.isEmpty {
@@ -849,12 +852,12 @@ content = replace_once(
     """                            case "About":
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(profile.title)
-                                    Text("@\\\\(profile.username ?? "unknown")")
+                                    Text("@\\(profile.username ?? "unknown")")
                                 }""",
     """                            case "About":
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(profile.title)
-                                    Text("@\\\\(profile.username ?? "unknown")")
+                                    Text("@\\(profile.username ?? "unknown")")
                                     if let bio = profile.bio, !bio.isEmpty { Text(bio) }
                                     else { Text("No bio yet.").foregroundStyle(.secondary) }
                                 }""",
@@ -862,10 +865,10 @@ content = replace_once(
 )
 content = replace_once(
     content,
-    """                            Text("\\\\(store.subscriberCount) subscribers")
+    """                            Text("\\(store.subscriberCount) subscribers")
                                 .font(.system(size: 16, weight: .medium)).foregroundStyle(.secondary)
                         }""",
-    """                            Text("\\\\(store.subscriberCount) subscribers")
+    """                            Text("\\(store.subscriberCount) subscribers")
                                 .font(.system(size: 16, weight: .medium)).foregroundStyle(.secondary)
                             if let bio = profile.bio, !bio.isEmpty {
                                 Text(bio).font(.system(size: 13)).foregroundStyle(.secondary).lineLimit(3)
@@ -878,12 +881,12 @@ content = replace_once(
     """                            case "About":
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(profile.title)
-                                    Text("@\\\\(profile.username ?? "unknown")")
+                                    Text("@\\(profile.username ?? "unknown")")
                                 }""",
     """                            case "About":
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(profile.title)
-                                    Text("@\\\\(profile.username ?? "unknown")")
+                                    Text("@\\(profile.username ?? "unknown")")
                                     if let bio = profile.bio, !bio.isEmpty { Text(bio) }
                                     else { Text("No bio yet.").foregroundStyle(.secondary) }
                                 }""",
