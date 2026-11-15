@@ -46,8 +46,10 @@ replacement = r'''    private func renderCrop() throws -> UIImage {
 
         let sourceOriginX = ((displayedWidth - viewport.width) / 2 - clampedX) / displayScale
         let sourceOriginY = ((displayedHeight - viewport.height) / 2 - clampedY) / displayScale
-        let pixelsPerPointX = CGFloat(sourceCG.width) / image.size.width
-        let pixelsPerPointY = CGFloat(sourceCG.height) / image.size.height
+        // Use normalized dimensions because the selected UIImage may carry EXIF orientation.
+        let normalizedSize = upright.size
+        let pixelsPerPointX = CGFloat(sourceCG.width) / normalizedSize.width
+        let pixelsPerPointY = CGFloat(sourceCG.height) / normalizedSize.height
 
         let rawRect = CGRect(
             x: sourceOriginX * pixelsPerPointX,
@@ -56,7 +58,13 @@ replacement = r'''    private func renderCrop() throws -> UIImage {
             height: (viewport.height / displayScale) * pixelsPerPointY
         )
         let imageBounds = CGRect(x: 0, y: 0, width: CGFloat(sourceCG.width), height: CGFloat(sourceCG.height))
-        let cropRect = rawRect.integral.intersection(imageBounds)
+        // Keep the preview's fractional position, rounding only to source pixels.
+        let minX = floor(rawRect.minX)
+        let minY = floor(rawRect.minY)
+        let maxX = ceil(rawRect.maxX)
+        let maxY = ceil(rawRect.maxY)
+        let pixelRect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+        let cropRect = pixelRect.intersection(imageBounds)
         guard cropRect.width >= 1, cropRect.height >= 1,
               let croppedCG = sourceCG.cropping(to: cropRect) else {
             throw NSError(domain: "CarbyneImage", code: 422,
@@ -69,9 +77,11 @@ replacement = r'''    private func renderCrop() throws -> UIImage {
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         format.opaque = true
-        let result = UIGraphicsImageRenderer(size: target, format: format).image { context in
-            context.cgContext.interpolationQuality = .high
-            context.cgContext.draw(croppedCG, in: CGRect(origin: .zero, size: target))
+        // UIImage.draw applies UIKit's upright orientation in the renderer context.
+        // Direct CGContext.draw(CGImage) here flips the saved crop vertically.
+        let croppedImage = UIImage(cgImage: croppedCG, scale: 1, orientation: .up)
+        let result = UIGraphicsImageRenderer(size: target, format: format).image { _ in
+            croppedImage.draw(in: CGRect(origin: .zero, size: target))
         }
         guard let output = result.cgImage,
               output.width == Int(target.width),
