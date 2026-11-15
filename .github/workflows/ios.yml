@@ -84,6 +84,8 @@ jobs:
         run: python3 .github/scripts/fix-profile-crop-preview-transform.py
       - name: Prevent black profile photos by rendering decoded source pixels directly
         run: python3 .github/scripts/fix-black-profile-photo-export.py
+      - name: Crop profile images in Core Image source pixels and encode without redraw
+        run: python3 .github/scripts/fix-profile-crop-ci-pixels.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
