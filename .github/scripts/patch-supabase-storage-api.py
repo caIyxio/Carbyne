@@ -11,7 +11,7 @@ old_upload = """            _ = try await supabase.storage.from("avatars").uploa
 new_upload = """            _ = try await supabase.storage.from("avatars").upload(
                 path,
                 data: data,
-                options: FileOptions(cacheControl: "3600", contentType: "image/jpeg", upsert: false)
+                options: FileOptions(cacheControl: "86400", contentType: "image/jpeg", upsert: false)
             )"""
 
 if old_upload in source:
