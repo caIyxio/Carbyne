@@ -56,6 +56,58 @@ if new_refresh not in store:
         raise SystemExit("Could not find toggleSubscription's refresh completion.")
     store = store.replace(old_refresh, new_refresh, 1)
 
+# Animate the actual capsule width and the identity-row layout together so
+# the button glides into its new size instead of snapping/repositioning.
+old_surface = """                            .foregroundStyle(store.isSubscribed ? Color.primary : Color(uiColor: .systemBackground))
+                            .background {
+                                Capsule().fill(store.isSubscribed
+                                    ? Color(uiColor: .secondarySystemBackground)
+                                    : Color.primary)
+                            }
+                            .overlay {
+                                Capsule().strokeBorder(Color.primary.opacity(store.isSubscribed ? 0.16 : 0))
+                            }
+"""
+new_surface = """                            .foregroundStyle(.primary)
+                            .background {
+                                Capsule().fill(.ultraThinMaterial)
+                                    .overlay {
+                                        Capsule().fill(Color.primary.opacity(store.isSubscribed ? 0.035 : 0.08))
+                                    }
+                            }
+                            .overlay {
+                                Capsule().strokeBorder(Color.primary.opacity(0.14))
+                            }
+"""
+if old_surface in content:
+    content = content.replace(old_surface, new_surface, 1)
+elif new_surface not in content:
+    raise SystemExit("Could not find Subscribe capsule surface to convert to material blur.")
+
+old_button_modifiers = """                    .buttonStyle(.plain)
+                    .fixedSize(horizontal: true, vertical: false)
+"""
+new_button_modifiers = """                    .buttonStyle(.plain)
+                    .frame(width: store.isSubscribed ? 100 : 88)
+                    .animation(.spring(response: 0.42, dampingFraction: 0.78), value: store.isSubscribed)
+"""
+if old_button_modifiers in content:
+    content = content.replace(old_button_modifiers, new_button_modifiers, 1)
+elif new_button_modifiers not in content:
+    raise SystemExit("Could not find Subscribe button sizing modifiers.")
+
+row_padding = """                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+"""
+row_animated = """                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .animation(.spring(response: 0.42, dampingFraction: 0.78), value: store.isSubscribed)
+"""
+if row_padding in content:
+    content = content.replace(row_padding, row_animated, 1)
+elif row_animated not in content:
+    raise SystemExit("Could not find public-profile identity row padding.")
+
 content_path.write_text(content)
 store_path.write_text(store)
-print("Added a spring symbol transition and success-only subscription haptics.")
+print("Added animated capsule resizing, smooth identity-row layout movement, material blur, and success-only haptics.")
