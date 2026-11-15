@@ -60,6 +60,8 @@ jobs:
         run: python3 .github/scripts/add-settings-privacy-navigation.py
       - name: Add messaging, profile crop editor, bios and tab avatar polish
         run: python3 .github/scripts/add-messaging-profile-crop-bio.py
+      - name: Add Edit Profile navigation and leave Upload empty
+        run: python3 .github/scripts/add-edit-profile-and-empty-upload.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
