@@ -72,6 +72,8 @@ jobs:
         run: python3 .github/scripts/fix-profile-images-and-app-loading.py
       - name: Fix zoomed and dragged profile crops and enlarge navigation avatar
         run: python3 .github/scripts/fix-manual-profile-crop-and-tab-avatar.py
+      - name: Fix crop output and adapt status bar contrast to background
+        run: python3 .github/scripts/fix-crop-render-and-adaptive-status-bar.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
