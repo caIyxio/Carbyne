@@ -82,6 +82,8 @@ jobs:
         run: python3 .github/scripts/fix-dragged-crop-source-rect.py
       - name: Keep crop preview and export transforms identical
         run: python3 .github/scripts/fix-profile-crop-preview-transform.py
+      - name: Prevent black profile photos by rendering decoded source pixels directly
+        run: python3 .github/scripts/fix-black-profile-photo-export.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
