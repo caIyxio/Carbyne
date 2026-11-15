@@ -168,12 +168,14 @@ new_security = """struct SecuritySettingsView: View {
 }
 
 struct MFASettingsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationStack {
             SecuritySettingsView()
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") { }
+                        Button("Done") { dismiss() }
                     }
                 }
         }
