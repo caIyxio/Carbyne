@@ -513,22 +513,12 @@ content = replace_once(content,
                     .accessibilityLabel("Change profile picture")
                     .offset(y: -24)
                     .padding(.bottom, -24)""", "editable avatar and banner")
-content = replace_once(content,
-    """        .task {
+profile_task = """        .task {
             displayName = store.profile?.displayName ?? ""
             username = store.profile?.username ?? ""
             bio = store.profile?.bio ?? ""
-        }
-    }
-}
-
-struct UploadScreen""",
-    """        .task {
-            displayName = store.profile?.displayName ?? ""
-            username = store.profile?.username ?? ""
-            bio = store.profile?.bio ?? ""
-        }
-        .onChange(of: avatarPickerItem) { _, item in
+        }"""
+profile_images = """        .onChange(of: avatarPickerItem) { _, item in
             guard let item else { return }
             Task {
                 if let data = try? await item.loadTransferable(type: Data.self),
@@ -554,11 +544,12 @@ struct UploadScreen""",
             if let cropImage {
                 ProfileImageCropSheet(image: cropImage, kind: cropKind)
             }
-        }
-    }
-}
+        }"""
+if profile_task in content:
+    content = content.replace(profile_task, profile_task + "\n" + profile_images, 1)
+else:
+    print("Edit Profile task anchor was already patched or is missing; skipping.")
 
-struct UploadScreen""", "edit profile crop sheet presentation")
 
 # Account switch: explicitly show a blocking loading state and only haptic on successful completion.
 store = replace_once(store,
