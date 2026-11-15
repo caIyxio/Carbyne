@@ -90,7 +90,7 @@ content = replace_once(
                 to: profile,
                 body: "",
                 attachmentData: data,
-                fileName: "Photo.\\\\(ext)",
+                fileName: "Photo.\\(ext)",
                 mimeType: mime,
                 messageType: "attachment"
             )
@@ -107,7 +107,9 @@ content = replace_once(
 
 # Replace generic Play Audio action with a conventional voice-note player bubble.
 bubble_start = content.find("struct MessageBubble: View {")
-bubble_end = content.find("\\nfinal class CarbyneVoiceRecorder", bubble_start)
+bubble_end = content.find("final class CarbyneVoiceRecorder", bubble_start)
+if bubble_end >= 0:
+    bubble_end = content.rfind("\\n", bubble_start, bubble_end)
 if bubble_start < 0 or bubble_end < 0:
     raise SystemExit("Could not locate MessageBubble and voice recorder boundaries.")
 new_bubble = """struct MessageBubble: View {
@@ -178,7 +180,7 @@ struct VoiceNotePlayer: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .center, spacing: 2) {
-                    ForEach(Array([5, 10, 7, 14, 9, 17, 11, 6, 15, 9, 18, 8, 13, 5, 11, 16, 7, 12].enumerated()), id: \\\\.offset) { item in
+                    ForEach(Array([5, 10, 7, 14, 9, 17, 11, 6, 15, 9, 18, 8, 13, 5, 11, 16, 7, 12].enumerated()), id: \\.offset) { item in
                         Capsule()
                             .frame(width: 3, height: CGFloat(item.element))
                     }
