@@ -109,7 +109,7 @@ content = replace_once(
 bubble_start = content.find("struct MessageBubble: View {")
 bubble_end = content.find("final class CarbyneVoiceRecorder", bubble_start)
 if bubble_end >= 0:
-    bubble_end = content.rfind("\\n", bubble_start, bubble_end)
+    bubble_end = content.rfind("\n", bubble_start, bubble_end)
 if bubble_start < 0 or bubble_end < 0:
     raise SystemExit("Could not locate MessageBubble and voice recorder boundaries.")
 new_bubble = """struct MessageBubble: View {
