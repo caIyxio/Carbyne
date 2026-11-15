@@ -171,7 +171,7 @@ jobs:
               var body: some View {
                   Group {
                       if let image {
-                          Image(uiImage: image).resizable().scaledToFill()
+                          Image(uiImage: image).renderingMode(.original).resizable().scaledToFill()
                       } else if isAvatar {
                           Circle().fill(Color(uiColor: .systemGray5))
                       } else {
@@ -422,7 +422,8 @@ jobs:
           }
           print("Screenshot: \(width)x\(height)")
           region("banner central area", 0.10, 0.045, 0.90, 0.145)
-          region("avatar center area", 0.055, 0.17, 0.26, 0.275)
-          region("bottom-right tab avatar area", 0.84, 0.91, 0.96, 0.985)
+          region("avatar center core", 0.08, 0.13, 0.25, 0.22)
+          region("tab avatar icon core", 0.91, 0.925, 0.96, 0.965)
+          region("tab bar background", 0.70, 0.925, 0.84, 0.965)
           SWIFT
           swift "$RUNNER_TEMP/screenshot-stats.swift" "$RUNNER_TEMP/profile-ui.png"
