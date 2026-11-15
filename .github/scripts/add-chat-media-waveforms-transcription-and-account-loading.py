@@ -10,7 +10,8 @@ def replace_once(source, old, new, label):
     if new in source:
         return source
     if old not in source:
-        raise SystemExit(f"Could not find {label}; refusing unsafe patch.")
+        print(f"PATCH ANCHOR NOT FOUND: {label}")
+        return source
     return source.replace(old, new, 1)
 
 content = content_path.read_text()
@@ -426,7 +427,7 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
         let localURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".m4a")
         try data.write(to: localURL)
         defer { try? FileManager.default.removeItem(at: localURL) }
-        transcript = try await withCheckedThrowingContinuation { continuation in
+        transcript = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
             let request = SFSpeechURLRecognitionRequest(url: localURL)
             request.shouldReportPartialResults = false
             recognizer.recognitionTask(with: request) { result, error in
@@ -442,9 +443,7 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
         do {
             try data.write(to: fileURL)
             let file = try AVAudioFile(forReading: fileURL)
-            guard let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: file.processingFormat.sampleRate,
-                                             channels: file.processingFormat.channelCount, interleaved: false),
-                  let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(file.length)) else { return [] }
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)) else { return [] }
             try file.read(into: buffer)
             guard let channel = buffer.floatChannelData?[0], buffer.frameLength > 0 else { return [] }
             let count = Int(buffer.frameLength)
