@@ -54,6 +54,8 @@ jobs:
         run: python3 .github/scripts/extend-public-profile-banner-under-status-bar.py
       - name: Add animated subscription feedback and haptics
         run: python3 .github/scripts/add-subscription-feedback.py
+      - name: Add stretchy profile banners and account switching
+        run: python3 .github/scripts/add-profile-stretch-and-account-switcher.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
