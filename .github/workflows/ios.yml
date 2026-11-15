@@ -168,3 +168,5 @@ jobs:
           path: Carbyne-unsigned.ipa
           if-no-files-found: error
           retention-days: 30
+
+# Crop export orientation and preview alignment correction
