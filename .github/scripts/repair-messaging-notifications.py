@@ -14,12 +14,8 @@ def replace_once(source, old, new, label):
 
 # Chat screen: profile picture above the display name in the navigation header.
 content = content_path.read_text()
-content = replace_once(
-    content,
-    "import UniformTypeIdentifiers\n",
-    "import UniformTypeIdentifiers\nimport UserNotifications\n",
-    "notification import"
-)
+if "import UserNotifications" not in content:
+    content = "import UserNotifications\\n" + content
 
 content = replace_once(
     content,
@@ -258,12 +254,8 @@ content_path.write_text(content)
 # Deliver local message alerts with the system default sound for incoming messages
 # while the app is connected to Supabase Realtime.
 store = store_path.read_text()
-store = replace_once(
-    store,
-    "import UIKit\\n",
-    "import UIKit\\nimport UserNotifications\\n",
-    "store notification import"
-)
+if "import UserNotifications" not in store:
+    store = "import UserNotifications\\n" + store
 store = replace_once(
     store,
     """    private var messagesRealtimeChannel: RealtimeChannelV2?
@@ -338,12 +330,8 @@ store_path.write_text(store)
 
 # Register a notification delegate so default-sound alerts can be presented in-app too.
 app = app_path.read_text()
-app = replace_once(
-    app,
-    "import UIKit\\n",
-    "import UIKit\\nimport UserNotifications\\n",
-    "app notification import"
-)
+if "import UserNotifications" not in app:
+    app = "import UserNotifications\\n" + app
 app = replace_once(
     app,
     """@main
