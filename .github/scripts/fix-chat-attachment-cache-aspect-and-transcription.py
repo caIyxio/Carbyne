@@ -174,7 +174,7 @@ content = content.replace(
                             showMedia = true
                         } catch { store.errorMessage = error.localizedDescription }
                     }
-                } label {
+                } label: {
                     AttachmentThumbnail(url: attachmentURL, name: message.attachmentName,
                                         mimeType: message.attachmentMimeType)
                 }""",
@@ -207,7 +207,7 @@ content = content.replace(
                             showMedia = true
                         } catch { store.errorMessage = error.localizedDescription }
                     }
-                } label {""",
+                } label: {""",
     """                Button {
                     isVideo = message.attachmentMimeType?.hasPrefix("video/") == true
                     if !isVideo, ChatAttachmentImageCache.shared.image(for: path) != nil {
@@ -221,7 +221,7 @@ content = content.replace(
                             } catch { store.errorMessage = error.localizedDescription }
                         }
                     }
-                } label {"""
+                } label: {"""
 )
 content = content.replace(
     """                    AttachmentThumbnail(url: attachmentURL, name: message.attachmentName,
