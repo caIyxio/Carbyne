@@ -47,7 +47,7 @@ jobs:
           @main
           struct ProbeApp: App {
               var body: some Scene {
-                  WindowGroup { ProbeTabController().preferredColorScheme(.light) }
+                  WindowGroup { CarbyneEdgeToEdgeRoot { ProbeTabController().preferredColorScheme(.light) }.ignoresSafeArea(.container, edges: .all) }
               }
           }
           SWIFT
@@ -57,6 +57,68 @@ jobs:
           import PhotosUI
           import ImageIO
 
+          struct CarbyneEdgeToEdgeRoot<Content: View>: UIViewControllerRepresentable {
+              let content: Content
+              init(@ViewBuilder content: () -> Content) { self.content = content() }
+              func makeUIViewController(context: Context) -> UIHostingController<Content> {
+                  let controller = CarbyneAdaptiveStatusHostingController(rootView: content)
+                  controller.safeAreaRegions = .keyboard
+                  controller.edgesForExtendedLayout = .all
+                  controller.extendedLayoutIncludesOpaqueBars = true
+                  controller.view.backgroundColor = .clear
+                  return controller
+              }
+              func updateUIViewController(_ controller: UIHostingController<Content>, context: Context) {
+                  controller.rootView = content
+              }
+          }
+
+          final class CarbyneAdaptiveStatusHostingController<Content: View>: UIHostingController<Content> {
+              private var currentStyle: UIStatusBarStyle = .darkContent
+              override var preferredStatusBarStyle: UIStatusBarStyle { currentStyle }
+              override func viewDidAppear(_ animated: Bool) {
+                  super.viewDidAppear(animated)
+                  refreshStatusBarStyle()
+              }
+              override func viewDidLayoutSubviews() {
+                  super.viewDidLayoutSubviews()
+                  refreshStatusBarStyle()
+              }
+              private func refreshStatusBarStyle() {
+                  let bounds = view.bounds
+                  let width = Int(bounds.width.rounded(.up))
+                  let height = max(1, Int(max(view.safeAreaInsets.top, 24).rounded(.up)))
+                  guard width > 0, bounds.height >= CGFloat(height),
+                        let context = CGContext(data: nil, width: width, height: height,
+                                                bitsPerComponent: 8, bytesPerRow: width * 4,
+                                                space: CGColorSpaceCreateDeviceRGB(),
+                                                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+                  context.translateBy(x: 0, y: CGFloat(height) - bounds.height)
+                  view.layer.render(in: context)
+                  guard let data = context.data else { return }
+                  let pixels = data.bindMemory(to: UInt8.self, capacity: width * height * 4)
+                  var totalLuminance: CGFloat = 0
+                  var samples = 0
+                  let strideX = max(1, width / 48)
+                  let strideY = max(1, height / 8)
+                  for y in Swift.stride(from: 0, to: height, by: strideY) {
+                      for x in Swift.stride(from: 0, to: width, by: strideX) {
+                          let index = (y * width + x) * 4
+                          let red = CGFloat(pixels[index]) / 255
+                          let green = CGFloat(pixels[index + 1]) / 255
+                          let blue = CGFloat(pixels[index + 2]) / 255
+                          totalLuminance += 0.2126 * red + 0.7152 * green + 0.0722 * blue
+                          samples += 1
+                      }
+                  }
+                  guard samples > 0 else { return }
+                  let nextStyle: UIStatusBarStyle = totalLuminance / CGFloat(samples) < 0.48 ? .lightContent : .darkContent
+                  guard nextStyle != currentStyle else { return }
+                  currentStyle = nextStyle
+                  setNeedsStatusBarAppearanceUpdate()
+              }
+          }
+
           private enum ProbeConfig {
               static let avatarURL = URL(string: "https://vezpcrvdswyvcwdzyxnr.supabase.co/storage/v1/object/public/avatars/db2ff8ff-242b-4774-a0b3-13faeddcf583/avatar-050d097e-a513-4792-b7b2-8247cf0bc51d.jpg")!
               static let bannerURL = URL(string: "https://vezpcrvdswyvcwdzyxnr.supabase.co/storage/v1/object/public/avatars/db2ff8ff-242b-4774-a0b3-13faeddcf583/banner-197aaa01-4554-4b47-82bb-c5587b3db784.jpg")!
@@ -65,6 +127,7 @@ jobs:
           @MainActor
           private enum ProbeReporter {
               private static var lines: [String] = []
+              static var bannerGeometryLogged = false
               private static var reportURL: URL {
                   FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                       .appendingPathComponent("report.txt")
@@ -189,7 +252,12 @@ jobs:
               let url: URL?
               var body: some View {
                   GeometryReader { geometry in
-                      let pullDistance = max(geometry.frame(in: .named("profileScroll")).minY, 0)
+                      let namedFrame = geometry.frame(in: .named("profileScroll"))
+                  let pullDistance = max(namedFrame.minY, 0)
+                  if !ProbeReporter.bannerGeometryLogged {
+                      ProbeReporter.bannerGeometryLogged = true
+                      ProbeReporter.append("banner geometry local=\\(geometry.frame(in: .local)) named=\\(namedFrame) pull=\\(pullDistance) size=\\(geometry.size)")
+                  }
                       CarbyneCachedImage(url: url, isAvatar: false)
                           .frame(width: geometry.size.width, height: geometry.size.width / 3 + pullDistance)
                           .clipped()
@@ -422,8 +490,8 @@ jobs:
           }
           print("Screenshot: \(width)x\(height)")
           region("banner central area", 0.10, 0.045, 0.90, 0.145)
-          region("avatar center core", 0.08, 0.13, 0.25, 0.22)
-          region("tab avatar icon core", 0.91, 0.925, 0.96, 0.965)
-          region("tab bar background", 0.70, 0.925, 0.84, 0.965)
+          region("avatar center core", 0.11, 0.275, 0.22, 0.335)
+          region("tab avatar icon core", 0.80, 0.925, 0.86, 0.965)
+          region("tab bar background", 0.70, 0.925, 0.76, 0.965)
           SWIFT
           swift "$RUNNER_TEMP/screenshot-stats.swift" "$RUNNER_TEMP/profile-ui.png"
