@@ -178,9 +178,9 @@ struct VoiceNotePlayer: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .center, spacing: 2) {
-                    ForEach(Array([5, 10, 7, 14, 9, 17, 11, 6, 15, 9, 18, 8, 13, 5, 11, 16, 7, 12].enumerated()), id: \\\\.offset) { _, height in
+                    ForEach(Array([5, 10, 7, 14, 9, 17, 11, 6, 15, 9, 18, 8, 13, 5, 11, 16, 7, 12].enumerated()), id: \\\\.offset) { item in
                         Capsule()
-                            .frame(width: 3, height: CGFloat(height))
+                            .frame(width: 3, height: CGFloat(item.element))
                     }
                 }
                 .frame(height: 20, alignment: .center)
