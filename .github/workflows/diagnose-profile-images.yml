@@ -305,6 +305,7 @@ jobs:
                   context.coordinator.updateAvatar(url: ProbeConfig.avatarURL, item: controller.tabBar.items?.last)
               }
 
+              @MainActor
               final class Coordinator: NSObject {
                   private var requestedAvatarURL: URL?
                   private var avatarTask: Task<Void, Never>?
@@ -332,7 +333,13 @@ jobs:
                               guard !Task.isCancelled, self?.requestedAvatarURL == url else { return }
                               item?.image = icon
                               item?.selectedImage = icon
-                              await ProbeReporter.append("tab avatar assigned: \(icon.cgImage.map { ProbeReporter.luminance($0) } ?? "no cgImage")")
+                              let iconSummary: String
+                              if let cg = icon.cgImage {
+                                  iconSummary = ProbeReporter.luminance(cg)
+                              } else {
+                                  iconSummary = "no cgImage"
+                              }
+                              await ProbeReporter.append("tab avatar assigned: \\(iconSummary)")
                           } catch {
                               await ProbeReporter.append("tab avatar error: \(error.localizedDescription)")
                           }
