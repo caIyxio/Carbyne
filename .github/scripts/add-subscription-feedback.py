@@ -38,7 +38,7 @@ new = """        let wasSubscribed = isSubscribed
         do {
             if isSubscribed {
 """
-if new not in store:
+if old not in store:
     raise SystemExit("Could not find toggleSubscription's loading/action block.")
 store = store.replace("        isLoading = true\n        defer { isLoading = false }\n        do {\n            if isSubscribed {", new, 1)
 
