@@ -36,6 +36,15 @@ jobs:
         run: |
           cat .github/source-bundle/part-*.b64 | base64 --decode > "$RUNNER_TEMP/carbyne-project-source.tar.gz"
           tar -xzf "$RUNNER_TEMP/carbyne-project-source.tar.gz" -C .
+      - name: Preserve web export for native settings review
+        run: |
+          tar -czf "$RUNNER_TEMP/carbyne-web-export.tar.gz" --exclude='./.git' --exclude='./.github' --exclude='./ios' --exclude='./node_modules' .
+      - name: Upload web export for native settings review
+        uses: actions/upload-artifact@v4
+        with:
+          name: Carbyne-web-export-review
+          path: ${{ runner.temp }}/carbyne-web-export.tar.gz
+          retention-days: 1
       - name: Apply adaptive Liquid Glass SwiftUI interface
         run: python3 .github/scripts/apply-liquid-glass-ui.py
       - name: Rebuild native Liquid Glass navigation and profile UI
