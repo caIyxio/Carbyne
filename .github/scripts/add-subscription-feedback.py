@@ -14,6 +14,8 @@ label = """                        Label(store.isSubscribed ? "Subscribed" : "Su
 animated_label = """                        Label(store.isSubscribed ? "Subscribed" : "Subscribe",
                               systemImage: store.isSubscribed ? "checkmark" : "plus")
                             .font(.system(size: 12, weight: .semibold))
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
                             .contentTransition(.symbolEffect(.replace))
                             .symbolEffect(.bounce, value: store.isSubscribed)
                             .animation(.spring(response: 0.34, dampingFraction: 0.68), value: store.isSubscribed)
@@ -88,7 +90,7 @@ old_button_modifiers = """                    .buttonStyle(.plain)
                     .fixedSize(horizontal: true, vertical: false)
 """
 new_button_modifiers = """                    .buttonStyle(.plain)
-                    .frame(width: store.isSubscribed ? 100 : 88)
+                    .frame(width: store.isSubscribed ? 120 : 112)
                     .animation(.spring(response: 0.42, dampingFraction: 0.78), value: store.isSubscribed)
 """
 if old_button_modifiers in content:
