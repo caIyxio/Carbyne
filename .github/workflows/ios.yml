@@ -76,6 +76,8 @@ jobs:
         run: python3 .github/scripts/fix-crop-render-and-adaptive-status-bar.py
       - name: Fix black crop exports using materialized CGImage rendering
         run: python3 .github/scripts/fix-profile-crop-black-render.py
+      - name: Fix false blank detection for transparent crop corners
+        run: python3 .github/scripts/fix-transparent-crop-corner-validation.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
