@@ -170,3 +170,5 @@ jobs:
           retention-days: 30
 
 # Crop export orientation and preview alignment correction
+
+# Rebuild after crop coordinate compile fix
