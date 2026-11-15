@@ -61,12 +61,13 @@ content = replace_once(content,
                 NavigationLink {
                     PublicChannelScreen(profile: profile)
                 } label: {
-                    VStack(spacing: 3) {
-                        AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 48)
+                    VStack(spacing: 4) {
+                        AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 56)
                         Text(profile.title)
                             .font(.system(size: 13, weight: .semibold))
                             .lineLimit(1)
                     }
+                    .frame(maxWidth: .infinity, minHeight: 82, alignment: .center)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -220,6 +221,7 @@ struct AttachmentThumbnail: View {
             }
         }
         .frame(maxWidth: 230)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.clear, lineWidth: 0))
         .accessibilityLabel(mimeType?.hasPrefix("video/") == true ? "Video attachment preview" : "Photo attachment preview")
     }
 
@@ -269,6 +271,7 @@ struct VoiceNotePlayer: View {
     @StateObject private var playback = VoiceNotePlaybackController()
     @State private var showExpanded = false
     @State private var showTranscript = false
+    @State private var transcriptionError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -288,8 +291,9 @@ struct VoiceNotePlayer: View {
                 }
                 .buttonStyle(.plain)
                 VStack(alignment: .leading, spacing: 5) {
-                    WaveformBars(samples: playback.waveform.isEmpty ? Array(repeating: 0.2, count: 36) : playback.waveform)
-                        .frame(height: 28)
+                    WaveformBars(samples: playback.waveform.isEmpty ? Array(repeating: 0.08, count: 28) : playback.waveform,
+                                 progress: playback.progress)
+                        .frame(height: 26)
                     Text(playback.duration > 0 ? playback.formattedDuration : "Voice message")
                         .font(.system(size: 11, weight: .medium)).opacity(0.8)
                 }
@@ -307,7 +311,7 @@ struct VoiceNotePlayer: View {
                         do {
                             let url = try await store.signedAttachmentURL(path: path)
                             try await playback.transcribe(url: url)
-                        } catch { store.errorMessage = error.localizedDescription }
+                        } catch { transcriptionError = error.localizedDescription }
                     }
                 }
             } label: {
@@ -317,17 +321,26 @@ struct VoiceNotePlayer: View {
             }
             .buttonStyle(.plain)
             if showTranscript {
-                Text(playback.transcript ?? (playback.isTranscribing ? "Transcribing…" : "Transcript unavailable"))
+                Text(playback.transcript ?? (playback.isTranscribing ? "Transcribing…" : (transcriptionError ?? "Transcript unavailable")))
                     .font(.system(size: 12)).textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .task(id: path) {
+            do {
+                let url = try await store.signedAttachmentURL(path: path)
+                try await playback.prepare(url: url)
+            } catch {
+                transcriptionError = error.localizedDescription
             }
         }
         .sheet(isPresented: $showExpanded) {
             NavigationStack {
                 VStack(spacing: 24) {
                     Image(systemName: "waveform").font(.system(size: 42))
-                    WaveformBars(samples: playback.waveform.isEmpty ? Array(repeating: 0.2, count: 64) : playback.waveform)
-                        .frame(height: 80).padding(.horizontal, 20)
+                    WaveformBars(samples: playback.waveform.isEmpty ? Array(repeating: 0.08, count: 28) : playback.waveform,
+                                 progress: playback.progress)
+                        .frame(height: 54).padding(.horizontal, 20)
                     Text(playback.formattedDuration).font(.system(.title3, design: .rounded).monospacedDigit())
                     Button {
                         Task {
@@ -364,15 +377,19 @@ struct VoiceNotePlayer: View {
 
 struct WaveformBars: View {
     let samples: [CGFloat]
+    var progress: Double = 0
+
     var body: some View {
         GeometryReader { geometry in
             HStack(alignment: .center, spacing: 2) {
-                ForEach(Array(samples.enumerated()), id: \.offset) { _, sample in
-                    Capsule().fill(Color.primary.opacity(0.75))
+                ForEach(Array(samples.enumerated()), id: \.offset) { index, sample in
+                    Capsule()
+                        .fill(Double(index) / Double(max(samples.count, 1)) <= progress ? Color.black : Color.gray.opacity(0.55))
                         .frame(maxWidth: .infinity)
-                        .frame(height: max(3, geometry.size.height * min(max(sample, 0.04), 1)))
+                        .frame(height: max(3, geometry.size.height * min(max(sample, 0.05), 1)))
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
     }
 }
@@ -391,21 +408,30 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
         return String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
 
-    func toggle(url: URL) async throws {
-        if let player {
-            if isPlaying { player.pause(); isPlaying = false }
-            else { player.play(); isPlaying = true }
-            return
-        }
+    var progress: Double {
+        guard let player, player.duration > 0 else { return 0 }
+        return min(max(player.currentTime / player.duration, 0), 1)
+    }
+
+    func prepare(url: URL) async throws {
+        guard player == nil else { return }
         let (data, _) = try await URLSession.shared.data(from: url)
         let newPlayer = try AVAudioPlayer(data: data)
         newPlayer.delegate = self
-        newPlayer.prepareToPlay()
+        guard newPlayer.prepareToPlay() else {
+            throw NSError(domain: "CarbyneAudio", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "This voice note could not be decoded."])
+        }
         duration = newPlayer.duration
         waveform = Self.makeWaveform(from: data)
         player = newPlayer
-        newPlayer.play()
-        isPlaying = true
+    }
+
+    func toggle(url: URL) async throws {
+        if player == nil { try await prepare(url: url) }
+        guard let player else { return }
+        if isPlaying { player.pause(); isPlaying = false }
+        else { player.play(); isPlaying = true }
     }
 
     func transcribe(url: URL) async throws {
@@ -447,7 +473,7 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
             try file.read(into: buffer)
             guard let channel = buffer.floatChannelData?[0], buffer.frameLength > 0 else { return [] }
             let count = Int(buffer.frameLength)
-            let bars = 48
+            let bars = 28
             let bucket = max(1, count / bars)
             return (0..<bars).map { index in
                 let start = index * bucket
@@ -455,7 +481,7 @@ final class VoiceNotePlaybackController: NSObject, ObservableObject, AVAudioPlay
                 guard start < end else { return CGFloat(0.08) }
                 var peak: Float = 0
                 for sample in start..<end { peak = max(peak, abs(channel[sample])) }
-                return CGFloat(min(max(peak * 3.5, 0.08), 1))
+                return CGFloat(min(max(peak * 3.0, 0.08), 1))
             }
         } catch { return [] }
     }
