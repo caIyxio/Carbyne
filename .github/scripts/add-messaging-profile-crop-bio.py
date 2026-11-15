@@ -493,7 +493,7 @@ struct ProfileBannerView""",
     "audio and file imports"
 )
 start = content.index("struct MessagesScreen: View {")
-end = content.index("\\nstruct UploadScreen: View {", start)
+end = content.index("\nstruct UploadScreen: View {", start)
 chat_views = """
 struct MessagesScreen: View {
     @EnvironmentObject private var store: CarbyneStore
