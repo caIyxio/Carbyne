@@ -1,4 +1,4 @@
-name: Diagnose Carbyne profile image pixels
+name: Diagnose Carbyne profile image view composition
 
 on:
   push:
@@ -11,104 +11,75 @@ permissions:
   contents: read
 
 jobs:
-  inspect-profile-images:
+  inspect-profile-ui:
     runs-on: macos-26
     steps:
-      - name: Test production image decode and rendering paths in an iOS Simulator
+      - name: Run the exact profile image views and tab avatar in an iOS Simulator
         shell: bash
         run: |
           set -euo pipefail
           BASE="https://vezpcrvdswyvcwdzyxnr.supabase.co/storage/v1/object/public/avatars/db2ff8ff-242b-4774-a0b3-13faeddcf583"
-          ROOT="$RUNNER_TEMP/ImageRenderProbe"
-          mkdir -p "$ROOT/Resources" "$ROOT/Sources"
-          curl --fail --silent --show-error --location --max-time 30 "$BASE/avatar-050d097e-a513-4792-b7b2-8247cf0bc51d.jpg" -o "$ROOT/Resources/avatar.jpg"
-          curl --fail --silent --show-error --location --max-time 30 "$BASE/banner-197aaa01-4554-4b47-82bb-c5587b3db784.jpg" -o "$ROOT/Resources/banner.jpg"
+          AVATAR_URL="$BASE/avatar-050d097e-a513-4792-b7b2-8247cf0bc51d.jpg"
+          BANNER_URL="$BASE/banner-197aaa01-4554-4b47-82bb-c5587b3db784.jpg"
+          ROOT="$RUNNER_TEMP/CarbyneProfileUIProbe"
+          mkdir -p "$ROOT/Sources"
           cat > "$ROOT/project.yml" <<'YAML'
-          name: ImageRenderProbe
+          name: CarbyneProfileUIProbe
           options:
             bundleIdPrefix: com.carbyne
             deploymentTarget:
               iOS: "17.0"
           targets:
-            ImageRenderProbe:
+            CarbyneProfileUIProbe:
               type: application
               platform: iOS
               sources:
                 - Sources
               settings:
                 base:
-                  PRODUCT_BUNDLE_IDENTIFIER: com.carbyne.ImageRenderProbe
+                  PRODUCT_BUNDLE_IDENTIFIER: com.carbyne.ProfileUIProbe
                   GENERATE_INFOPLIST_FILE: YES
                   SWIFT_VERSION: "6.0"
           YAML
-          cat > "$ROOT/Sources/ImageRenderProbeApp.swift" <<'SWIFT'
+          cat > "$ROOT/Sources/ProbeApp.swift" <<'SWIFT'
           import SwiftUI
 
           @main
-          struct ImageRenderProbeApp: App {
+          struct ProbeApp: App {
               var body: some Scene {
-                  WindowGroup { ProbeView() }
+                  WindowGroup { ProbeTabController() }
               }
           }
           SWIFT
           cat > "$ROOT/Sources/ProbeView.swift" <<'SWIFT'
           import SwiftUI
           import UIKit
+          import PhotosUI
           import ImageIO
-          import CoreImage
 
-          struct ProbeView: View {
-              @State private var status = "Inspecting"
-              var body: some View {
-                  VStack(spacing: 8) {
-                      Text("Profile image rendering probe")
-                      Text(status)
-                  }
-                  .frame(maxWidth: .infinity, maxHeight: .infinity)
-                  .background(.white)
-                  .task { await runProbe() }
+          private enum ProbeConfig {
+              static let avatarURL = URL(string: "https://vezpcrvdswyvcwdzyxnr.supabase.co/storage/v1/object/public/avatars/db2ff8ff-242b-4774-a0b3-13faeddcf583/avatar-050d097e-a513-4792-b7b2-8247cf0bc51d.jpg")!
+              static let bannerURL = URL(string: "https://vezpcrvdswyvcwdzyxnr.supabase.co/storage/v1/object/public/avatars/db2ff8ff-242b-4774-a0b3-13faeddcf583/banner-197aaa01-4554-4b47-82bb-c5587b3db784.jpg")!
+          }
+
+          @MainActor
+          private enum ProbeReporter {
+              private static var lines: [String] = []
+              private static var reportURL: URL {
+                  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                      .appendingPathComponent("report.txt")
               }
-
-              private func imageData(named name: String) -> Data? {
-                  guard let url = Bundle.main.url(forResource: name, withExtension: "jpg")
-                      ?? Bundle.main.url(forResource: name, withExtension: "jpg", subdirectory: "Resources") else { return nil }
-                  return try? Data(contentsOf: url)
+              static func append(_ line: String) {
+                  lines.append(line)
+                  try? lines.joined(separator: "\n").write(to: reportURL, atomically: true, encoding: .utf8)
+                  print(line)
               }
-
-              private func directUIImage(named name: String) -> UIImage? {
-                  guard let data = imageData(named: name) else { return nil }
-                  return UIImage(data: data)
-              }
-
-              private func imageIOThumbnail(named name: String, cacheImmediately: Bool) -> UIImage? {
-                  guard let data = imageData(named: name),
-                        let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
-                  let options: [CFString: Any] = [
-                      kCGImageSourceCreateThumbnailFromImageAlways: true,
-                      kCGImageSourceCreateThumbnailWithTransform: true,
-                      kCGImageSourceThumbnailMaxPixelSize: 1400,
-                      kCGImageSourceShouldCache: true,
-                      kCGImageSourceShouldCacheImmediately: cacheImmediately
-                  ]
-                  guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
-                  return UIImage(cgImage: cg, scale: 1, orientation: .up)
-              }
-
-              private func coreImageDecode(named name: String) -> UIImage? {
-                  guard let data = imageData(named: name),
-                        let image = CIImage(data: data),
-                        let space = CGColorSpace(name: CGColorSpace.sRGB),
-                        let cg = CIContext(options: [.outputColorSpace: space]).createCGImage(image, from: image.extent) else { return nil }
-                  return UIImage(cgImage: cg, scale: 1, orientation: .up)
-              }
-
-              @MainActor
-              private func pixelSummary(_ cg: CGImage) -> String {
+              static func luminance(_ cg: CGImage) -> String {
                   let width = cg.width
                   let height = cg.height
                   let count = width * height
-                  var buffer = [UInt8](repeating: 0, count: count * 4)
-                  buffer.withUnsafeMutableBytes { raw in
+                  var pixels = [UInt8](repeating: 0, count: count * 4)
+                  pixels.withUnsafeMutableBytes { raw in
                       let context = CGContext(
                           data: raw.baseAddress,
                           width: width,
@@ -121,102 +92,265 @@ jobs:
                       context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
                   }
                   var sum = 0.0
-                  var black = 0
-                  for index in stride(from: 0, to: buffer.count, by: 4) {
-                      let y = 0.2126 * Double(buffer[index])
-                          + 0.7152 * Double(buffer[index + 1])
-                          + 0.0722 * Double(buffer[index + 2])
+                  var visible = 0
+                  for index in stride(from: 0, to: pixels.count, by: 4) {
+                      let alpha = Double(pixels[index + 3]) / 255
+                      if alpha < 0.05 { continue }
+                      let y = 0.2126 * Double(pixels[index])
+                          + 0.7152 * Double(pixels[index + 1])
+                          + 0.0722 * Double(pixels[index + 2])
                       sum += y
-                      if y < 8 { black += 1 }
+                      visible += 1
                   }
-                  return "\(width)x\(height) avg=\(String(format: "%.2f", sum / Double(count))) black=\(String(format: "%.2f", 100 * Double(black) / Double(count)))%"
+                  guard visible > 0 else { return "no visible pixels" }
+                  return "\(width)x\(height) visible_avg=\(String(format: "%.2f", sum / Double(visible)))"
+              }
+          }
+
+          @MainActor
+          final class CarbyneRemoteImageCache {
+              static let shared = CarbyneRemoteImageCache()
+              private let memory = NSCache<NSString, UIImage>()
+              private var pending: [String: Task<UIImage?, Never>] = [:]
+
+              private func diskURL(for key: String) -> URL? {
+                  guard let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else { return nil }
+                  let directory = base.appendingPathComponent("CarbyneRemoteImages", isDirectory: true)
+                  try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                  let name = Data(key.utf8).base64EncodedString()
+                      .replacingOccurrences(of: "/", with: "_")
+                      .replacingOccurrences(of: "+", with: "-")
+                      .replacingOccurrences(of: "=", with: "")
+                  return directory.appendingPathComponent(name + ".img")
               }
 
-              @MainActor
-              private func inspect(_ label: String, _ image: UIImage, size: CGSize, lines: inout [String]) {
-                  guard let cg = image.cgImage else {
-                      lines.append("\(label): UIImage.CGImage is nil")
-                      return
+              func image(for url: URL?) async -> UIImage? {
+                  guard let url else { return nil }
+                  let key = url.absoluteString
+                  if let cached = memory.object(forKey: key as NSString) {
+                      await ProbeReporter.append("cache memory hit \(url.lastPathComponent): \(cached.cgImage.map { ProbeReporter.luminance($0) } ?? "no cgImage")")
+                      return cached
                   }
-                  lines.append("\(label) CGImage: \(pixelSummary(cg)) colorSpace=\(cg.colorSpace?.name.map { $0 as String } ?? "nil")")
-                  let renderer = UIGraphicsImageRenderer(size: size)
-                  let drawn = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
-                  if let output = drawn.cgImage {
-                      lines.append("\(label) UIKit draw: \(pixelSummary(output))")
-                  } else {
-                      lines.append("\(label) UIKit draw: no CGImage")
+                  if let file = diskURL(for: key), let cached = UIImage(contentsOfFile: file.path) {
+                      memory.setObject(cached, forKey: key as NSString)
+                      await ProbeReporter.append("cache disk hit \(url.lastPathComponent): \(cached.cgImage.map { ProbeReporter.luminance($0) } ?? "no cgImage")")
+                      return cached
                   }
+                  if let task = pending[key] { return await task.value }
+                  let task = Task.detached(priority: .utility) { () -> UIImage? in
+                      guard let (data, response) = try? await URLSession.shared.data(from: url),
+                            (response as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? true,
+                            let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+                      let options: [CFString: Any] = [
+                          kCGImageSourceCreateThumbnailFromImageAlways: true,
+                          kCGImageSourceCreateThumbnailWithTransform: true,
+                          kCGImageSourceThumbnailMaxPixelSize: 1400
+                      ]
+                      guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+                      return UIImage(cgImage: cg, scale: 1, orientation: .up)
+                  }
+                  pending[key] = task
+                  let loaded = await task.value
+                  pending[key] = nil
+                  if let loaded {
+                      memory.setObject(loaded, forKey: key as NSString)
+                      if let file = diskURL(for: key), let data = loaded.jpegData(compressionQuality: 0.88) {
+                          try? data.write(to: file, options: .atomic)
+                      }
+                  }
+                  await ProbeReporter.append("cache network \(url.lastPathComponent): \(loaded?.cgImage.map { ProbeReporter.luminance($0) } ?? "failed decode")")
+                  return loaded
+              }
+          }
 
-                  let view = Image(uiImage: image)
-                      .resizable()
-                      .scaledToFill()
-                      .frame(width: size.width, height: size.height)
-                      .clipped()
-                      .background(Color.white)
-                  let swiftRenderer = ImageRenderer(content: view)
-                  swiftRenderer.proposedSize = ProposedViewSize(width: size.width, height: size.height)
-                  swiftRenderer.scale = 1
-                  if let output = swiftRenderer.uiImage?.cgImage {
-                      lines.append("\(label) SwiftUI ImageRenderer: \(pixelSummary(output))")
-                  } else {
-                      lines.append("\(label) SwiftUI ImageRenderer: FAILED")
+          struct CarbyneCachedImage: View {
+              let url: URL?
+              let isAvatar: Bool
+              @State private var image: UIImage?
+
+              var body: some View {
+                  Group {
+                      if let image {
+                          Image(uiImage: image).resizable().scaledToFill()
+                      } else if isAvatar {
+                          Circle().fill(Color(uiColor: .systemGray5))
+                      } else {
+                          Rectangle().fill(Color(uiColor: .secondarySystemBackground))
+                      }
+                  }
+                  .task(id: url?.absoluteString) {
+                      image = await CarbyneRemoteImageCache.shared.image(for: url)
+                      await ProbeReporter.append("CarbyneCachedImage task \(isAvatar ? "avatar" : "banner") state=\(image != nil)")
                   }
               }
+          }
 
-              @MainActor
-              private func circularAvatar(_ image: UIImage) -> UIImage {
-                  let size = CGSize(width: 34, height: 34)
-                  return UIGraphicsImageRenderer(size: size).image { context in
-                      let rect = CGRect(origin: .zero, size: size)
-                      UIBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1)).addClip()
-                      image.draw(in: rect)
-                      context.cgContext.setStrokeColor(UIColor.white.withAlphaComponent(0.9).cgColor)
-                      context.cgContext.setLineWidth(2)
-                      context.cgContext.strokeEllipse(in: rect.insetBy(dx: 1, dy: 1))
-                  }.withRenderingMode(.alwaysOriginal)
+          struct ProfileBannerView: View {
+              let url: URL?
+              var body: some View {
+                  GeometryReader { geometry in
+                      let pullDistance = max(geometry.frame(in: .named("profileScroll")).minY, 0)
+                      CarbyneCachedImage(url: url, isAvatar: false)
+                          .frame(width: geometry.size.width, height: geometry.size.width / 3 + pullDistance)
+                          .clipped()
+                          .offset(y: -pullDistance)
+                  }
+                  .aspectRatio(3.0, contentMode: .fit)
               }
+          }
 
-              @MainActor
-              private func runProbe() async {
-                  var lines: [String] = []
-                  for name in ["avatar", "banner"] {
-                      let size = name == "avatar" ? CGSize(width: 200, height: 200) : CGSize(width: 360, height: 120)
-                      if let direct = directUIImage(named: name) {
-                          inspect("\(name) UIImage(data:) after loader returned", direct, size: size, lines: &lines)
-                          let icon = circularAvatar(direct)
-                          inspect("\(name) tab-bar circular renderer", icon, size: CGSize(width: 34, height: 34), lines: &lines)
-                          if let prepared = await direct.byPreparingForDisplay() {
-                              inspect("\(name) UIImage.byPreparingForDisplay()", prepared, size: size, lines: &lines)
-                          } else {
-                              lines.append("\(name) UIImage.byPreparingForDisplay(): nil")
+          struct AvatarView: View {
+              let url: URL?
+              let size: CGFloat
+              var body: some View {
+                  CarbyneCachedImage(url: url, isAvatar: true)
+                      .overlay {
+                          if url == nil {
+                              Image(systemName: "person.fill")
+                                  .font(.system(size: size * 0.42))
+                                  .foregroundStyle(.secondary)
                           }
-                      } else {
-                          lines.append("\(name) UIImage(data:): FAILED")
                       }
+                      .frame(width: size, height: size)
+                      .clipShape(Circle())
+                      .accessibilityHidden(true)
+              }
+          }
 
-                      if let lazy = imageIOThumbnail(named: name, cacheImmediately: false) {
-                          inspect("\(name) ImageIO thumbnail (lazy) after source/data released", lazy, size: size, lines: &lines)
-                      } else {
-                          lines.append("\(name) ImageIO lazy thumbnail: FAILED")
+          struct EditProfileProbeView: View {
+              @State private var avatarPickerItem: PhotosPickerItem?
+              @State private var bannerPickerItem: PhotosPickerItem?
+
+              var body: some View {
+                  ScrollView {
+                      VStack(alignment: .leading, spacing: 0) {
+                          PhotosPicker(selection: $bannerPickerItem, matching: .images) {
+                              ZStack(alignment: .bottomTrailing) {
+                                  ProfileBannerView(url: ProbeConfig.bannerURL)
+                                  Label("Change banner", systemImage: "pencil")
+                                      .font(.caption.weight(.semibold))
+                                      .padding(8)
+                                      .background(.ultraThinMaterial, in: Capsule())
+                                      .padding(10)
+                              }
+                          }
+                          .buttonStyle(.plain)
+
+                          HStack(alignment: .bottom, spacing: 14) {
+                              PhotosPicker(selection: $avatarPickerItem, matching: .images) {
+                                  AvatarView(url: ProbeConfig.avatarURL, size: 92)
+                                      .overlay(Circle().stroke(Color(uiColor: .systemBackground), lineWidth: 4))
+                                      .overlay(alignment: .bottomTrailing) {
+                                          Image(systemName: "camera.fill")
+                                              .font(.system(size: 12, weight: .bold))
+                                              .padding(7)
+                                              .background(.ultraThinMaterial, in: Circle())
+                                      }
+                              }
+                              .buttonStyle(.plain)
+                              .offset(y: -24)
+                              .padding(.bottom, -24)
+
+                              VStack(alignment: .leading, spacing: 3) {
+                                  Text("Ace").font(.system(size: 22, weight: .bold))
+                                  Text("@ace").foregroundStyle(.secondary)
+                              }
+                              .padding(.bottom, 4)
+                              Spacer(minLength: 0)
+                          }
+                          .padding(.horizontal, 18)
+                          .padding(.top, 4)
+
+                          VStack(alignment: .leading, spacing: 18) {
+                              Text("Display name").font(.system(size: 13, weight: .semibold))
+                              RoundedRectangle(cornerRadius: 12).fill(Color(uiColor: .secondarySystemBackground)).frame(height: 60)
+                              Text("Username").font(.system(size: 13, weight: .semibold))
+                              RoundedRectangle(cornerRadius: 12).fill(Color(uiColor: .secondarySystemBackground)).frame(height: 60)
+                          }
+                          .padding(18)
                       }
-                      if let eager = imageIOThumbnail(named: name, cacheImmediately: true) {
-                          inspect("\(name) ImageIO thumbnail (cacheImmediately) after source/data released", eager, size: size, lines: &lines)
-                      } else {
-                          lines.append("\(name) ImageIO eager thumbnail: FAILED")
+                  }
+                  .background(Color(uiColor: .systemBackground))
+                  .ignoresSafeArea(.container, edges: .top)
+                  .task {
+                      _ = await CarbyneRemoteImageCache.shared.image(for: ProbeConfig.avatarURL)
+                      _ = await CarbyneRemoteImageCache.shared.image(for: ProbeConfig.bannerURL)
+                      await ProbeReporter.append("explicit cache warm-up completed")
+                  }
+              }
+          }
+
+          struct ProbeTabController: UIViewControllerRepresentable {
+              func makeCoordinator() -> Coordinator { Coordinator() }
+
+              func makeUIViewController(context: Context) -> UITabBarController {
+                  let controller = UITabBarController()
+                  controller.view.backgroundColor = .clear
+                  controller.tabBar.isTranslucent = true
+                  let titles = ["Home", "Moments", "Upload", "Chat", "Profile"]
+                  let symbols = ["house", "play.rectangle", "plus.circle.fill", "bubble.left.and.bubble.right", "person.crop.circle"]
+                  let viewControllers: [UIViewController] = titles.enumerated().map { index, title in
+                      let host = UIHostingController(rootView: EditProfileProbeView())
+                      host.view.backgroundColor = .clear
+                      host.tabBarItem = UITabBarItem(title: nil, image: UIImage(systemName: symbols[index]), selectedImage: UIImage(systemName: symbols[index]))
+                      host.tabBarItem.accessibilityLabel = title
+                      return host
+                  }
+                  controller.setViewControllers(viewControllers, animated: false)
+                  controller.selectedIndex = 4
+                  return controller
+              }
+
+              func updateUIViewController(_ controller: UITabBarController, context: Context) {
+                  context.coordinator.updateAvatar(url: ProbeConfig.avatarURL, item: controller.tabBar.items?.last)
+              }
+
+              final class Coordinator: NSObject {
+                  private var requestedAvatarURL: URL?
+                  private var avatarTask: Task<Void, Never>?
+
+                  func updateAvatar(url: URL?, item: UITabBarItem?) {
+                      guard url != requestedAvatarURL else { return }
+                      requestedAvatarURL = url
+                      avatarTask?.cancel()
+                      item?.image = UIImage(systemName: "person.crop.circle.fill")
+                      item?.selectedImage = UIImage(systemName: "person.crop.circle.fill")
+                      guard let url, let item else {
+                          Task { @MainActor in await ProbeReporter.append("tab avatar update skipped: url or item was nil") }
+                          return
                       }
-                      if let ci = coreImageDecode(named: name) {
-                          inspect("\(name) Core Image sRGB materialized", ci, size: size, lines: &lines)
-                      } else {
-                          lines.append("\(name) Core Image decode: FAILED")
+                      avatarTask = Task { [weak self, weak item] in
+                          do {
+                              let (data, response) = try await URLSession.shared.data(from: url)
+                              guard !Task.isCancelled,
+                                    (response as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? true,
+                                    let image = UIImage(data: data) else {
+                                  await ProbeReporter.append("tab avatar download or UIImage decode failed")
+                                  return
+                              }
+                              let icon = Self.circularAvatar(image)
+                              guard !Task.isCancelled, self?.requestedAvatarURL == url else { return }
+                              item?.image = icon
+                              item?.selectedImage = icon
+                              await ProbeReporter.append("tab avatar assigned: \(icon.cgImage.map { ProbeReporter.luminance($0) } ?? "no cgImage")")
+                          } catch {
+                              await ProbeReporter.append("tab avatar error: \(error.localizedDescription)")
+                          }
                       }
                   }
 
-                  let report = lines.joined(separator: "\n")
-                  let destination = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                      .appendingPathComponent("report.txt")
-                  try? report.write(to: destination, atomically: true, encoding: .utf8)
-                  status = "Report written"
-                  print(report)
+                  private static func circularAvatar(_ image: UIImage) -> UIImage {
+                      let size = CGSize(width: 34, height: 34)
+                      let renderer = UIGraphicsImageRenderer(size: size)
+                      return renderer.image { context in
+                          let rect = CGRect(origin: .zero, size: size)
+                          UIBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1)).addClip()
+                          image.draw(in: rect)
+                          context.cgContext.setStrokeColor(UIColor.white.withAlphaComponent(0.9).cgColor)
+                          context.cgContext.setLineWidth(2)
+                          context.cgContext.strokeEllipse(in: rect.insetBy(dx: 1, dy: 1))
+                      }.withRenderingMode(.alwaysOriginal)
+                  }
               }
           }
           SWIFT
@@ -236,13 +370,52 @@ jobs:
           )"
           xcrun simctl boot "$UDID" || true
           xcrun simctl bootstatus "$UDID" -b
-          xcodebuild -quiet -project ImageRenderProbe.xcodeproj -scheme ImageRenderProbe -destination "id=$UDID" -derivedDataPath "$RUNNER_TEMP/ImageRenderProbeDerived" CODE_SIGNING_ALLOWED=NO build
-          APP="$RUNNER_TEMP/ImageRenderProbeDerived/Build/Products/Debug-iphonesimulator/ImageRenderProbe.app"
-          cp "$ROOT/Resources/avatar.jpg" "$APP/avatar.jpg"
-          cp "$ROOT/Resources/banner.jpg" "$APP/banner.jpg"
+          xcodebuild -quiet -project CarbyneProfileUIProbe.xcodeproj -scheme CarbyneProfileUIProbe -destination "id=$UDID" -derivedDataPath "$RUNNER_TEMP/CarbyneProfileUIProbeDerived" CODE_SIGNING_ALLOWED=NO build
+          APP="$RUNNER_TEMP/CarbyneProfileUIProbeDerived/Build/Products/Debug-iphonesimulator/CarbyneProfileUIProbe.app"
           xcrun simctl install "$UDID" "$APP"
-          xcrun simctl launch "$UDID" com.carbyne.ImageRenderProbe
-          sleep 5
-          APP_DATA="$(xcrun simctl get_app_container "$UDID" com.carbyne.ImageRenderProbe data)"
-          echo "=== iOS Simulator UIImage / ImageIO / CoreImage / SwiftUI report ==="
+          xcrun simctl launch "$UDID" com.carbyne.ProfileUIProbe
+          sleep 8
+          APP_DATA="$(xcrun simctl get_app_container "$UDID" com.carbyne.ProfileUIProbe data)"
+          echo "=== Exact Carbyne profile view / task / tab bar report ==="
           cat "$APP_DATA/Documents/report.txt"
+          xcrun simctl io "$UDID" screenshot "$RUNNER_TEMP/profile-ui.png" >/dev/null
+          cat > "$RUNNER_TEMP/screenshot-stats.swift" <<'SWIFT'
+          import Foundation
+          import ImageIO
+          import CoreGraphics
+
+          let url = URL(fileURLWithPath: CommandLine.arguments[1])
+          let data = try Data(contentsOf: url)
+          let source = CGImageSourceCreateWithData(data as CFData, nil)!
+          let image = CGImageSourceCreateImageAtIndex(source, 0, nil)!
+          let width = image.width
+          let height = image.height
+          var pixels = [UInt8](repeating: 0, count: width * height * 4)
+          pixels.withUnsafeMutableBytes { raw in
+              let context = CGContext(data: raw.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+              context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+          }
+          func region(_ name: String, _ x1: Double, _ y1: Double, _ x2: Double, _ y2: Double) {
+              let left = max(0, min(width - 1, Int(Double(width) * x1)))
+              let top = max(0, min(height - 1, Int(Double(height) * y1)))
+              let right = max(left + 1, min(width, Int(Double(width) * x2)))
+              let bottom = max(top + 1, min(height, Int(Double(height) * y2)))
+              var sum = 0.0
+              var count = 0
+              for y in top..<bottom {
+                  for x in left..<right {
+                      let i = (y * width + x) * 4
+                      let alpha = Double(pixels[i + 3]) / 255
+                      if alpha < 0.8 { continue }
+                      sum += 0.2126 * Double(pixels[i]) + 0.7152 * Double(pixels[i + 1]) + 0.0722 * Double(pixels[i + 2])
+                      count += 1
+                  }
+              }
+              print("\(name): \(count > 0 ? String(format: "%.2f", sum / Double(count)) : "no opaque pixels")")
+          }
+          print("Screenshot: \(width)x\(height)")
+          region("banner central area", 0.10, 0.045, 0.90, 0.145)
+          region("avatar center area", 0.055, 0.17, 0.26, 0.275)
+          region("bottom-right tab avatar area", 0.84, 0.91, 0.96, 0.985)
+          SWIFT
+          swift "$RUNNER_TEMP/screenshot-stats.swift" "$RUNNER_TEMP/profile-ui.png"
