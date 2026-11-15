@@ -1,0 +1,87 @@
+name: Diagnose Carbyne profile image pixels
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-profile-images.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-profile-images:
+    runs-on: macos-26
+    steps:
+      - name: Download current public profile images without publishing their bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://vezpcrvdswyvcwdzyxnr.supabase.co/storage/v1/object/public/avatars/db2ff8ff-242b-4774-a0b3-13faeddcf583"
+          curl --fail --silent --show-error --location --max-time 30 "$BASE/avatar-050d097e-a513-4792-b7b2-8247cf0bc51d.jpg" -o "$RUNNER_TEMP/avatar.jpg"
+          curl --fail --silent --show-error --location --max-time 30 "$BASE/banner-197aaa01-4554-4b47-82bb-c5587b3db784.jpg" -o "$RUNNER_TEMP/banner.jpg"
+          cat > "$RUNNER_TEMP/inspect.swift" <<'SWIFT'
+          import Foundation
+          import ImageIO
+          import CoreGraphics
+
+          func report(_ label: String, _ image: CGImage) {
+              let width = image.width
+              let height = image.height
+              let count = width * height
+              var bytes = [UInt8](repeating: 0, count: count * 4)
+              bytes.withUnsafeMutableBytes { raw in
+                  let context = CGContext(
+                      data: raw.baseAddress,
+                      width: width,
+                      height: height,
+                      bitsPerComponent: 8,
+                      bytesPerRow: width * 4,
+                      space: CGColorSpaceCreateDeviceRGB(),
+                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                  )!
+                  context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+              }
+              var total = 0.0
+              var black = 0
+              var bright = 0
+              var minimum = 255
+              var maximum = 0
+              for i in stride(from: 0, to: bytes.count, by: 4) {
+                  let r = Int(bytes[i])
+                  let g = Int(bytes[i + 1])
+                  let b = Int(bytes[i + 2])
+                  let luma = (0.2126 * Double(r)) + (0.7152 * Double(g)) + (0.0722 * Double(b))
+                  total += luma
+                  minimum = min(minimum, r, g, b)
+                  maximum = max(maximum, r, g, b)
+                  if luma < 8 { black += 1 }
+                  if luma > 200 { bright += 1 }
+              }
+              print("\(label): \(width)x\(height), average_luma=\(String(format: "%.2f", total / Double(count))), near_black=\(String(format: "%.2f", 100 * Double(black) / Double(count)))%, bright=\(String(format: "%.2f", 100 * Double(bright) / Double(count)))%, channel_min=\(minimum), channel_max=\(maximum)")
+          }
+
+          for path in CommandLine.arguments.dropFirst() {
+              let url = URL(fileURLWithPath: path)
+              let data = try Data(contentsOf: url)
+              guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+                    let full = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+                  fatalError("Could not decode original JPEG: \(path)")
+              }
+              let label = url.lastPathComponent
+              print("\(label): bytes=\(data.count)")
+              report("\(label) original", full)
+              let options: [CFString: Any] = [
+                  kCGImageSourceCreateThumbnailFromImageAlways: true,
+                  kCGImageSourceCreateThumbnailWithTransform: true,
+                  kCGImageSourceThumbnailMaxPixelSize: 1400
+              ]
+              if let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) {
+                  report("\(label) ImageIO-thumbnail", thumbnail)
+              } else {
+                  print("\(label): ImageIO thumbnail creation FAILED")
+              }
+          }
+          SWIFT
+          swift "$RUNNER_TEMP/inspect.swift" "$RUNNER_TEMP/avatar.jpg" "$RUNNER_TEMP/banner.jpg"
