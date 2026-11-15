@@ -40,7 +40,7 @@ new = """        let wasSubscribed = isSubscribed
 """
 if new not in store:
     raise SystemExit("Could not find toggleSubscription's loading/action block.")
-store = store.replace(new, new.replace("        isLoading = true", "        isLoading = true"), 1)
+store = store.replace("        isLoading = true\n        defer { isLoading = false }\n        do {\n            if isSubscribed {", new, 1)
 
 old_refresh = """            await refreshSubscription(for: channel)
         } catch { errorMessage = error.localizedDescription }
