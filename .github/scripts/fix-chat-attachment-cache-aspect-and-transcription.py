@@ -359,7 +359,7 @@ new_transcribe = r"""    func transcribe(url: URL) async throws {
             throw NSError(domain: "CarbyneSpeech", code: 4,
                           userInfo: [NSLocalizedDescriptionKey: "On-device transcription is not available for the device's current language."])
         }
-        let transcriber = SpeechTranscriber(locale: locale, preset: .offlineTranscription)
+        let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
         if let installation = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
             try await installation.downloadAndInstall()
         }
@@ -377,7 +377,7 @@ new_transcribe = r"""    func transcribe(url: URL) async throws {
         }
 
         let fullText = try await transcriptionFuture
-        let recognized = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let recognized = fullText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         guard !recognized.isEmpty else {
             throw NSError(domain: "CarbyneSpeech", code: 2,
                           userInfo: [NSLocalizedDescriptionKey: "No speech could be recognized in this voice note."])
