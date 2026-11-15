@@ -55,7 +55,7 @@ replacement = r'''    private func renderCrop() throws -> UIImage {
             width: (viewport.width / displayScale) * pixelsPerPointX,
             height: (viewport.height / displayScale) * pixelsPerPointY
         )
-        let imageBounds = CGRect(x: 0, y: 0, width: sourceCG.width, height: sourceCG.height)
+        let imageBounds = CGRect(x: 0, y: 0, width: CGFloat(sourceCG.width), height: CGFloat(sourceCG.height))
         let cropRect = rawRect.integral.intersection(imageBounds)
         guard cropRect.width >= 1, cropRect.height >= 1,
               let croppedCG = sourceCG.cropping(to: cropRect) else {
