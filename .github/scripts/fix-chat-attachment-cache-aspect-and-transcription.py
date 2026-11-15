@@ -26,12 +26,33 @@ final class ChatAttachmentImageCache {
     static let shared = ChatAttachmentImageCache()
     private let images = NSCache<NSString, UIImage>()
 
-    func image(for path: String) -> UIImage? {
-        images.object(forKey: path as NSString)
+    private func diskURL(for path: String) -> URL? {
+        guard let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        let directory = base.appendingPathComponent("ChatAttachmentImages", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let key = Data(path.utf8).base64EncodedString()
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "=", with: "")
+        return directory.appendingPathComponent(key + ".img")
     }
 
-    func store(_ image: UIImage, for path: String) {
+    func image(for path: String) -> UIImage? {
+        if let image = images.object(forKey: path as NSString) { return image }
+        guard let fileURL = diskURL(for: path),
+              let data = try? Data(contentsOf: fileURL),
+              let image = UIImage(data: data) else { return nil }
         images.setObject(image, forKey: path as NSString)
+        return image
+    }
+
+    func store(_ image: UIImage, data: Data, for path: String) {
+        images.setObject(image, forKey: path as NSString)
+        if let fileURL = diskURL(for: path) {
+            try? data.write(to: fileURL, options: .atomic)
+        }
     }
 }
 
@@ -67,7 +88,7 @@ struct CachedChatAttachmentImage: View {
                     return
                 }
                 guard let decoded = UIImage(data: data) else { return }
-                ChatAttachmentImageCache.shared.store(decoded, for: path)
+                ChatAttachmentImageCache.shared.store(decoded, data: data, for: path)
                 image = decoded
             } catch {
                 // Keep the lightweight placeholder; a later appearance can retry.
@@ -296,6 +317,11 @@ new_transcribe = r"""    func transcribe(url: URL) async throws {
         try data.write(to: localURL, options: .atomic)
         defer { try? FileManager.default.removeItem(at: localURL) }
 
+        if #available(iOS 26.0, *) {
+            transcript = try await transcribeWithSpeechAnalyzer(at: localURL)
+            return
+        }
+
         let useOnDeviceFirst = recognizer.supportsOnDeviceRecognition
         let recognizedText: String
         do {
@@ -317,6 +343,37 @@ new_transcribe = r"""    func transcribe(url: URL) async throws {
             }
         }
         transcript = recognizedText
+    }
+
+    @available(iOS 26.0, *)
+    private func transcribeWithSpeechAnalyzer(at url: URL) async throws -> String {
+        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: Locale.current) else {
+            throw NSError(domain: "CarbyneSpeech", code: 4,
+                          userInfo: [NSLocalizedDescriptionKey: "On-device transcription is not available for the device's current language."])
+        }
+        let transcriber = SpeechTranscriber(locale: locale, preset: .offlineTranscription)
+        if let installation = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
+            try await installation.downloadAndInstall()
+        }
+
+        let audioFile = try AVAudioFile(forReading: url)
+        let analyzer = SpeechAnalyzer(modules: [transcriber])
+        async let transcriptionFuture = try transcriber.results.reduce("") { text, result in
+            text + String(result.text.characters)
+        }
+
+        if let lastSample = try await analyzer.analyzeSequence(from: audioFile) {
+            try await analyzer.finalizeAndFinish(through: lastSample)
+        } else {
+            await analyzer.cancelAndFinishNow()
+        }
+
+        let recognized = try await transcriptionFuture.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !recognized.isEmpty else {
+            throw NSError(domain: "CarbyneSpeech", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "No speech could be recognized in this voice note."])
+        }
+        return recognized
     }
 
     private func recognizeFile(at url: URL, with recognizer: SFSpeechRecognizer,
