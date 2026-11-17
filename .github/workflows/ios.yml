@@ -167,6 +167,8 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY='' \
             build
+      - name: Stamp app version and serial into Info.plist
+        run: python3 .github/scripts/stamp-built-app-metadata.py "$RUNNER_TEMP/CarbyneDerivedData/Build/Products/Release-iphoneos/Carbyne.app"
       - name: Package unsigned IPA
         run: |
           APP="$RUNNER_TEMP/CarbyneDerivedData/Build/Products/Release-iphoneos/Carbyne.app"
