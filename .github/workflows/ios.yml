@@ -138,11 +138,7 @@ jobs:
           p = pathlib.Path(sys.argv[1])
           text = p.read_text()
           if "ASSETCATALOG_COMPILER_APPICON_NAME" not in text:
-              text = "settings:
-  base:
-    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-
-" + text
+              text = "settings:\n  base:\n    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon\n\n" + text
               p.write_text(text)
           print("Carbyne app icon asset catalog installed.")
           PY
