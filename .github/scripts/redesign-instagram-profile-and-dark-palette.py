@@ -499,3 +499,55 @@ s = s.replace('''                    .ignoresSafeArea(.container, edges: .all)
 p.write_text(s)
 print("Corrected avatar/banner overlap, removed duplicate profile controls, and extended charcoal palette app-wide.")
 
+
+
+# Ensure the avatar actually straddles the banner edge by roughly half its size.
+s = s.replace('''                                    .padding(.leading, 2)
+                                    .padding(.top, -26)''',
+              '''                                    .padding(.leading, 2)
+                                    .padding(.top, -52)''')
+s = s.replace('''                            .padding(.top, 18)
+
+                            if let bio = profile.bio''',
+              '''                            .padding(.top, 0)
+
+                            if let bio = profile.bio''')
+s = s.replace('''                    .padding(.top, 18)
+
+                    if let bio = profile.bio''',
+              '''                    .padding(.top, 0)
+
+                    if let bio = profile.bio''')
+p.write_text(s)
+
+# Extend the same dynamic palette to settings/about lists.
+settings_path = Path("ios/Carbyne/Sources/AccountSheets.swift")
+a = settings_path.read_text()
+a = a.replace('''        .navigationTitle("Settings & Privacy")''',
+              '''        .scrollContentBackground(.hidden)
+        .background(CarbynePalette.background.ignoresSafeArea())
+        .navigationTitle("Settings & Privacy")''')
+a = a.replace('''        .navigationTitle("About Carbyne")''',
+              '''        .scrollContentBackground(.hidden)
+        .background(CarbynePalette.background.ignoresSafeArea())
+        .navigationTitle("About Carbyne")''')
+settings_path.write_text(a)
+
+# Native tab roots are full-screen surfaces too; prevent a system-default
+# background from peeking through between each hosted screen and the tab bar.
+tabs_path = Path("ios/Carbyne/Sources/CarbyneNativeTabController.swift")
+t = tabs_path.read_text()
+t = t.replace('''            host.view.backgroundColor = .clear''',
+              '''            host.view.backgroundColor = UIColor { traits in
+                traits.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.047, green: 0.055, blue: 0.063, alpha: 1)
+                    : .systemBackground
+            }''')
+t = t.replace('''            controller.view.backgroundColor = .clear''',
+              '''            controller.view.backgroundColor = UIColor { traits in
+                traits.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.047, green: 0.055, blue: 0.063, alpha: 1)
+                    : .systemBackground
+            }''')
+tabs_path.write_text(t)
+print("Applied corrected banner overlap and app-wide palette to profile, tabs, settings, and About.")
