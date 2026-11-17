@@ -94,6 +94,8 @@ jobs:
         run: python3 .github/scripts/fix-edit-profile-banner-coordinate-space.py
       - name: Use the same zoomed and dragged viewport for crop preview and export
         run: python3 .github/scripts/fix-profile-crop-shared-transform.py
+      - name: Add About, dark mode, private development notice and refreshed navigation
+        run: python3 .github/scripts/add-about-dark-mode-and-development-notice.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
