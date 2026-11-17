@@ -100,6 +100,8 @@ jobs:
         run: python3 .github/scripts/redesign-instagram-profile-and-dark-palette.py
       - name: Fix profile counts, username availability, sharing, and Chat routing
         run: python3 .github/scripts/fix-profile-counts-username-sharing-and-chat-routing.py
+      - name: Shorten profile banners and improve username spacing
+        run: python3 .github/scripts/refine-profile-banner-height-and-identity-spacing.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
