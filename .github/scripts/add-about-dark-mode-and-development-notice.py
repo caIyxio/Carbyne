@@ -5,7 +5,6 @@ import re
 
 root = Path("ios/Carbyne/Sources")
 
-# Persisted app-wide dark appearance.
 app = root / "CarbyneApp.swift"
 text = app.read_text()
 text = text.replace(
@@ -18,7 +17,6 @@ text = text.replace(
 )
 app.write_text(text)
 
-# Settings appearance switch and About page.
 p = root / "AccountSheets.swift"
 text = p.read_text()
 text = text.replace(
@@ -52,8 +50,8 @@ if "struct CarbyneAboutView" not in text:
 struct CarbyneAboutView: View {
     private var info: [String: Any] { Bundle.main.infoDictionary ?? [:] }
     private var version: String { info["CFBundleShortVersionString"] as? String ?? "26.0.1" }
-    private var build: String { info["CFBundleVersion"] as? String ?? "157" }
-    private var serial: String { info["CarbyneBuildSerial"] as? String ?? "202611170157000001" }
+    private var build: String { info["CFBundleVersion"] as? String ?? "158" }
+    private var serial: String { info["CarbyneBuildSerial"] as? String ?? "202611170158000001" }
 
     var body: some View {
         List {
@@ -83,7 +81,6 @@ struct CarbyneAboutView: View {
 '''
 p.write_text(text)
 
-# Per-build development warning, shown once for each serial.
 p = root / "ContentView.swift"
 text = p.read_text()
 text = text.replace(
@@ -93,7 +90,7 @@ text = text.replace(
     @AppStorage("carbyne.devNoticeSeenSerial") private var seenDevelopmentSerial = ""
     @AppStorage("carbyne.darkMode") private var darkMode = false
     private var developmentSerial: String {
-        Bundle.main.object(forInfoDictionaryKey: "CarbyneBuildSerial") as? String ?? "202611170157000001"
+        Bundle.main.object(forInfoDictionaryKey: "CarbyneBuildSerial") as? String ?? "202611170158000001"
     }
 '''
 )
@@ -112,7 +109,7 @@ text = text.replace(
         .alert("You’re in a development version of Carbyne", isPresented: $showDevelopmentNotice) {
             Button("I Understand") { seenDevelopmentSerial = developmentSerial }
         } message: {
-            Text("PRIVATE TEST BUILD\\n\\n1. Do not distribute or share this build.\\n2. Do not publish screenshots, recordings, or unreleased feature information.\\n3. Do not use Carbyne commercially.\\n4. Do not rely on it for important data or permanent storage.\\n5. Do not reverse-engineer, modify, or redistribute the app.\\n6. Only authorized testers may access it.\\n\\nNEW: Dark mode, About/version details, refreshed navigation, Spotlights naming, and an improved speech-recognition fallback.\\n\\nVersion 26.0.1  •  Serial \\(developmentSerial)")
+            Text("PRIVATE TEST BUILD\n\n1. Do not distribute or share this build.\n2. Do not publish screenshots, recordings, or unreleased feature information.\n3. Do not use Carbyne commercially.\n4. Do not rely on it for important data or permanent storage.\n5. Do not reverse-engineer, modify, or redistribute the app.\n6. Only authorized testers may access it.\n\nNEW: Dark mode, About/version details, refreshed navigation, Spotlights naming, and an improved speech-recognition fallback.\n\nVersion 26.0.1  •  Serial \(developmentSerial)")
         }
 '''
 )
@@ -130,7 +127,6 @@ text = text.replace(
 )
 p.write_text(text)
 
-# Native UIKit tab bar follows the persisted theme; preserve Profile avatar unchanged.
 p = root / "CarbyneNativeTabController.swift"
 text = p.read_text()
 text = text.replace('    let store: CarbyneStore\n', '    let store: CarbyneStore\n    let darkMode: Bool\n')
@@ -156,26 +152,25 @@ text = text.replace(
 )
 p.write_text(text)
 
-# Allow the app-selected appearance and expose a long, numeric, meaningful serial.
 project = Path("ios/Carbyne/project.yml")
 text = project.read_text().replace(
     "INFOPLIST_KEY_UIUserInterfaceStyle: Light",
     "INFOPLIST_KEY_UIUserInterfaceStyle: Automatic"
 )
-build = os.environ.get("GITHUB_RUN_NUMBER", "157")
+build = os.environ.get("GITHUB_RUN_NUMBER", "158")
 date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d")
 serial = f"{date}{int(build):04d}000001"
 if "INFOPLIST_KEY_CarbyneBuildSerial:" in text:
     text = re.sub(
-        r"(?m)^(\\s*)INFOPLIST_KEY_CarbyneBuildSerial:.*$",
-        rf'\\g<1>INFOPLIST_KEY_CarbyneBuildSerial: "{serial}"',
+        r"(?m)^(\s*)INFOPLIST_KEY_CarbyneBuildSerial:.*$",
+        rf'\g<1>INFOPLIST_KEY_CarbyneBuildSerial: "{serial}"',
         text
     )
 else:
     text = text.replace(
-        "    INFOPLIST_KEY_UIUserInterfaceStyle: Automatic\\n",
-        f'    INFOPLIST_KEY_UIUserInterfaceStyle: Automatic\\n    INFOPLIST_KEY_CarbyneBuildSerial: "{serial}"\\n'
+        "    INFOPLIST_KEY_UIUserInterfaceStyle: Automatic\n",
+        f'    INFOPLIST_KEY_UIUserInterfaceStyle: Automatic\n    INFOPLIST_KEY_CarbyneBuildSerial: "{serial}"\n'
     )
 project.write_text(text)
-Path("ios/Carbyne/VERSION").write_text("26.0.1\\n")
+Path("ios/Carbyne/VERSION").write_text("26.0.1\n")
 print(f"Applied Carbyne About, dark mode, private development notice, Spotlights and tab icon updates. Serial: {serial}")
