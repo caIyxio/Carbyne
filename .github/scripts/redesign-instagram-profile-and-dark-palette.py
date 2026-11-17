@@ -84,6 +84,38 @@ own = r'''struct ChannelScreen: View {
                 if let profile, store.session != nil {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {
+                            ProfileBannerView(url: store.publicImageURL(path: profile.bannerPath))
+                                .overlay(alignment: .top) {
+                                    HStack {
+                                        Button(action: openAccounts) {
+                                            Image(systemName: "ellipsis")
+                                                .font(.system(size: 17, weight: .semibold))
+                                                .frame(width: 40, height: 40)
+                                                .background(.ultraThinMaterial, in: Circle())
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel("Switch account")
+                                        Spacer()
+                                        Button { showSettings = true } label: {
+                                            Image(systemName: "gearshape")
+                                                .font(.system(size: 17, weight: .semibold))
+                                                .frame(width: 40, height: 40)
+                                                .background(.ultraThinMaterial, in: Circle())
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel("Settings & Privacy")
+                                        Button { showEditProfile = true } label: {
+                                            Image(systemName: "pencil")
+                                                .font(.system(size: 17, weight: .semibold))
+                                                .frame(width: 40, height: 40)
+                                                .background(.ultraThinMaterial, in: Circle())
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel("Edit profile")
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.top, 54)
+                                }
                             HStack(spacing: 12) {
                                 Text(profile.username ?? profile.title)
                                     .font(.system(size: 21, weight: .bold))
@@ -107,7 +139,9 @@ own = r'''struct ChannelScreen: View {
 
                             HStack(alignment: .center, spacing: 18) {
                                 AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 88)
+                                    .overlay(Circle().stroke(CarbynePalette.background, lineWidth: 3))
                                     .padding(.leading, 2)
+                                    .padding(.top, -26)
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(profile.title)
                                         .font(.system(size: 17, weight: .semibold))
@@ -258,9 +292,12 @@ public = r'''struct PublicChannelScreen: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    ProfileBannerView(url: store.publicImageURL(path: profile.bannerPath))
                     HStack(alignment: .center, spacing: 18) {
                         AvatarView(url: store.publicImageURL(path: profile.avatarPath), size: 88)
+                            .overlay(Circle().stroke(CarbynePalette.background, lineWidth: 3))
                             .padding(.leading, 2)
+                            .padding(.top, -26)
                         VStack(alignment: .leading, spacing: 8) {
                             Text(profile.title)
                                 .font(.system(size: 17, weight: .semibold))
