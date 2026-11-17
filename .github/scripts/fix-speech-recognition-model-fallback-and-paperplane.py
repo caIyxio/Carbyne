@@ -6,9 +6,9 @@ content = content_path.read_text()
 old_speech = """            if recognizer.supportsOnDeviceRecognition {
                 request.requiresOnDeviceRecognition = true
             }"""
-new_speech = """            # Keep the request eligible for Apple's speech service instead of
-            # forcing the device-local acoustic model. Some iOS asset builds expose
-            # an incompatible H16 VAD bundle and fail before transcription starts.
+new_speech = """            // Keep the request eligible for Apple's speech service instead of
+            // forcing the device-local acoustic model. Some iOS asset builds expose
+            // an incompatible H16 VAD bundle and fail before transcription starts.
             request.requiresOnDeviceRecognition = false"""
 if new_speech not in content:
     if old_speech not in content:
