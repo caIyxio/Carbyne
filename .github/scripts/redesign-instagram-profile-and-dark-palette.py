@@ -551,3 +551,43 @@ t = t.replace('''            controller.view.backgroundColor = .clear''',
             }''')
 tabs_path.write_text(t)
 print("Applied corrected banner overlap and app-wide palette to profile, tabs, settings, and About.")
+
+
+# Make every conversation surface use the same charcoal background as Home/Profile.
+s = s.replace('''                    .listStyle(.plain)
+                }
+            }
+            .navigationTitle("Chat")''',
+              '''                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .background(CarbynePalette.background)
+                }
+            }
+            .navigationTitle("Chat")''')
+s = s.replace('''            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if store.session != nil {''',
+              '''            .navigationBarTitleDisplayMode(.inline)
+            .background(CarbynePalette.background.ignoresSafeArea())
+            .toolbar {
+                if store.session != nil {''', 1)
+s = s.replace('''            List(store.channels.filter { $0.id != store.session?.user.id }) { profile in''',
+              '''            List(store.channels.filter { $0.id != store.session?.user.id }) { profile in''')
+s = s.replace('''            }
+            .navigationTitle("New message")''',
+              '''            }
+            .scrollContentBackground(.hidden)
+            .background(CarbynePalette.background.ignoresSafeArea())
+            .navigationTitle("New message")''', 1)
+# The thread message scroll view and composer should sit on the app-wide surface.
+s = s.replace('''            HStack(spacing: 10) {
+                PhotosPicker(selection: $selectedPhoto''',
+              '''            HStack(spacing: 10) {
+                PhotosPicker(selection: $selectedPhoto''', 1)
+s = s.replace('''        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)''',
+              '''        .background(CarbynePalette.background.ignoresSafeArea())
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)''', 1)
+p.write_text(s)
+print("Extended the charcoal theme across conversations and messaging screens.")
