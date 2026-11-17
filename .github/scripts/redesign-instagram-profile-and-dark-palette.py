@@ -400,3 +400,102 @@ s = s[:start] + public + s[end:]
 
 p.write_text(s)
 print("Applied Instagram-inspired charcoal palette, profile headers/actions, and exact-size avatar clipping.")
+
+
+# Correct the profile composition: keep Carbyne's banner, let the avatar
+# overlap its lower edge, and retain exactly one settings control.
+banner_header = '''                            HStack(spacing: 12) {
+                                Text(profile.username ?? profile.title)'''
+if banner_header in s:
+    a = s.index(banner_header)
+    b = s.index('                            HStack(alignment: .center, spacing: 18) {', a)
+    s = s[:a] + s[b:]
+
+s = s.replace('''                                    .padding(.top, -26)
+                                VStack(alignment: .leading, spacing: 8) {''',
+              '''                                    .padding(.top, -48)
+                                VStack(alignment: .leading, spacing: 8) {''')
+s = s.replace('''                            .padding(.top, 18)
+
+                            if let bio = profile.bio''',
+              '''                            .padding(.top, 0)
+
+                            if let bio = profile.bio''')
+
+# Public profile: overlap the avatar substantially instead of leaving it below
+# the banner; preserve the back/navigation row and existing banner.
+s = s.replace('''                            .padding(.top, -26)
+                        VStack(alignment: .leading, spacing: 8) {''',
+              '''                            .padding(.top, -48)
+                        VStack(alignment: .leading, spacing: 8) {''')
+s = s.replace('''                    .padding(.top, 18)
+
+                    if let bio = profile.bio''',
+              '''                    .padding(.top, 0)
+
+                    if let bio = profile.bio''')
+
+# Apply the dynamic charcoal palette to app roots, not just profile surfaces.
+# The palette remains UIColor-trait driven, so iOS appearance is still automatic.
+s = s.replace('''        Group {
+            if isPad {''',
+              '''        Group {
+            if isPad {''', 1)
+s = s.replace('''        .sheet(isPresented: $showAuth) { AuthenticationSheet() }''',
+              '''        .background(CarbynePalette.background.ignoresSafeArea())
+        .sheet(isPresented: $showAuth) { AuthenticationSheet() }''', 1)
+s = s.replace('''        .task { await store.loadChannels() }
+        .refreshable { await store.loadChannels() }
+        .safeAreaInset(edge: .top, spacing: 0) {''',
+              '''        .task { await store.loadChannels() }
+        .refreshable { await store.loadChannels() }
+        .background(CarbynePalette.background.ignoresSafeArea())
+        .safeAreaInset(edge: .top, spacing: 0) {''', 1)
+s = s.replace('''        .listStyle(.plain)
+        .searchable(text: $query, prompt: "Search channels")''',
+              '''        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(CarbynePalette.background.ignoresSafeArea())
+        .searchable(text: $query, prompt: "Search channels")''', 1)
+s = s.replace('''        Color.clear
+            .ignoresSafeArea()''',
+              '''        CarbynePalette.background
+            .ignoresSafeArea()''', 1)
+
+# Messages screen is a NavigationStack containing Lists; hide their default
+# platform background so the same app-wide palette shows through.
+s = s.replace('''        NavigationStack {
+            Group {
+                if store.session == nil {''',
+              '''        NavigationStack {
+            Group {
+                if store.session == nil {''', 1)
+s = s.replace('''            }
+        }
+    }
+}
+
+struct ChatThreadScreen''',
+              '''            }
+        }
+        .background(CarbynePalette.background.ignoresSafeArea())
+    }
+}
+
+struct ChatThreadScreen''', 1)
+
+# All native tab roots receive the app palette beneath their content.
+s = s.replace('''                        .ignoresSafeArea(.container, edges: .all)
+                    .environmentObject(store)''',
+              '''                        .ignoresSafeArea(.container, edges: .all)
+                    .background(CarbynePalette.background.ignoresSafeArea())
+                    .environmentObject(store)''')
+s = s.replace('''                    .ignoresSafeArea(.container, edges: .all)
+                    .environmentObject(store)''',
+              '''                    .ignoresSafeArea(.container, edges: .all)
+                    .background(CarbynePalette.background.ignoresSafeArea())
+                    .environmentObject(store)''')
+
+p.write_text(s)
+print("Corrected avatar/banner overlap, removed duplicate profile controls, and extended charcoal palette app-wide.")
+
