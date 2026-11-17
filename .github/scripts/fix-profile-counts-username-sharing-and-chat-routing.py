@@ -391,3 +391,29 @@ a = a.replace('''                    TextEditor(text: $bio)
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(CarbynePalette.divider, lineWidth: 1))''', 1)
 account_path.write_text(a)
 print("Simplified chat profile accessibility expression and applied theme-safe editor styling to both edit flows.")
+
+
+# Ensure every ChatThread profile link supplies the required callback and keep
+# the message-scroll observer out of the already-large SwiftUI builder.
+s = content_path.read_text()
+s = s.replace("PublicChannelScreen(profile: profile)", "PublicChannelScreen(profile: profile, openMessages: {})")
+s = s.replace('''                .onChange(of: threadMessages.count) { _, _ in
+                    if let last = threadMessages.last { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(last.id, anchor: .bottom) } }
+                }''',
+'''                .onChange(of: threadMessages.count) { _, _ in
+                    scrollToLatestMessage(using: proxy)
+                }''')
+if "private func scrollToLatestMessage(using proxy: ScrollViewProxy)" not in s:
+    marker = "    private func sendPhoto(_ item: PhotosPickerItem) async {"
+    helper = '''    private func scrollToLatestMessage(using proxy: ScrollViewProxy) {
+        guard let lastMessage = threadMessages.last else { return }
+        withAnimation(.easeOut(duration: 0.2)) {
+            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+        }
+    }
+
+'''
+    if marker not in s: raise SystemExit("ChatThread helper insertion point missing")
+    s = s.replace(marker, helper + marker, 1)
+content_path.write_text(s)
+print("Completed all PublicChannelScreen callback call sites and simplified chat scrolling type inference.")
