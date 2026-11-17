@@ -254,14 +254,16 @@ jobs:
                   GeometryReader { geometry in
                       let namedFrame = geometry.frame(in: .named("profileScroll"))
                   let pullDistance = max(namedFrame.minY, 0)
-                  if !ProbeReporter.bannerGeometryLogged {
-                      ProbeReporter.bannerGeometryLogged = true
-                      ProbeReporter.append("banner geometry local=\\(geometry.frame(in: .local)) named=\\(namedFrame) pull=\\(pullDistance) size=\\(geometry.size)")
-                  }
-                      CarbyneCachedImage(url: url, isAvatar: false)
-                          .frame(width: geometry.size.width, height: geometry.size.width / 3 + pullDistance)
-                          .clipped()
-                          .offset(y: -pullDistance)
+                  CarbyneCachedImage(url: url, isAvatar: false)
+                      .frame(width: geometry.size.width, height: geometry.size.width / 3 + pullDistance)
+                      .clipped()
+                      .offset(y: -pullDistance)
+                      .onAppear {
+                          if !ProbeReporter.bannerGeometryLogged {
+                              ProbeReporter.bannerGeometryLogged = true
+                              ProbeReporter.append("banner geometry local=\\(geometry.frame(in: .local)) named=\\(namedFrame) pull=\\(pullDistance) size=\\(geometry.size)")
+                          }
+                      }
                   }
                   .aspectRatio(3.0, contentMode: .fit)
               }
