@@ -25,12 +25,8 @@ own_start = s.index("struct ChannelScreen: View {")
 own_end = s.index("\nstruct PublicChannelScreen: View {", own_start)
 own = s[own_start:own_end]
 overlay_start = own.index("ProfileBannerView(url: store.publicImageURL(path: profile.bannerPath))")
-overlay_end = own.index("HStack(spacing: 12)", overlay_start)
-overlay = own[overlay_start:overlay_end]
-if ".padding(.top, 54)" not in overlay:
-    raise SystemExit("Expected banner controls top padding 54 not found.")
-overlay = overlay.replace(".padding(.top, 54)", ".padding(.top, 20)", 1)
-own = own[:overlay_start] + overlay + own[overlay_end:]
+padding_index = own.index(".padding(.top, 54)", overlay_start)
+own = own[:padding_index] + own[padding_index:].replace(".padding(.top, 54)", ".padding(.top, 20)", 1)
 s = s[:own_start] + own + s[own_end:]
 
 path.write_text(s)
