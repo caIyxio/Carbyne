@@ -104,6 +104,8 @@ jobs:
         run: python3 .github/scripts/refine-profile-banner-height-and-identity-spacing.py
       - name: Match profile banner proportions and keep identity below banner
         run: python3 .github/scripts/fix-profile-banner-ratio-and-identity-baseline.py
+      - name: Correct actual banner image height and raise banner controls
+        run: python3 .github/scripts/correct-profile-banner-rendered-height-and-controls.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
