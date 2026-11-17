@@ -350,3 +350,44 @@ s = s.replace('''                            PublicChannelScreen(profile: profil
 content_path.write_text(s)
 
 print("Fixed profile identity/actions, subscriber counts, username availability, editor colors, Home spacing, and Chat-tab navigation.")
+
+
+# Keep the thread's existing profile shortcut valid; it is already inside Chat.
+s = content_path.read_text()
+s = s.replace('''                    PublicChannelScreen(profile: profile)
+                } label: {''',
+              '''                    PublicChannelScreen(profile: profile, openMessages: {})
+                } label: {''', 1)
+s = s.replace('''.accessibilityLabel("Open \\\\(profile.title)'s profile")''',
+              '''.accessibilityLabel("Open profile")''', 1)
+content_path.write_text(s)
+
+# The alternate profile editor sheet uses the same theme-safe input treatment.
+account_path = root / "AccountSheets.swift"
+a = account_path.read_text()
+a = a.replace('''                    TextField("Display name", text: $displayName)
+                        .textContentType(.name)''',
+'''                    TextField("Display name", text: $displayName)
+                        .textContentType(.name)
+                        .foregroundStyle(.primary)
+                        .tint(.accentColor)''', 1)
+a = a.replace('''                    TextField("Username", text: $username)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()''',
+'''                    TextField("Username", text: $username)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .foregroundStyle(.primary)
+                        .tint(.accentColor)''', 1)
+a = a.replace('''                    TextEditor(text: $bio)
+                        .frame(minHeight: 90)''',
+'''                    TextEditor(text: $bio)
+                        .scrollContentBackground(.hidden)
+                        .foregroundStyle(.primary)
+                        .tint(.accentColor)
+                        .frame(minHeight: 90)
+                        .padding(6)
+                        .background(CarbynePalette.surface, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(CarbynePalette.divider, lineWidth: 1))''', 1)
+account_path.write_text(a)
+print("Simplified chat profile accessibility expression and applied theme-safe editor styling to both edit flows.")
