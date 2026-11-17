@@ -23,6 +23,14 @@ if old_frame not in source:
     raise SystemExit("Could not locate crop preview image frame.")
 source = source.replace(old_frame, new_frame, 1)
 
+old_drag = """                                let drawWidth = previewImage.size.width * baseScale * zoom
+                                let drawHeight = previewImage.size.height * baseScale * zoom"""
+new_drag = """                                let drawWidth = metrics.displayedSize.width
+                                let drawHeight = metrics.displayedSize.height"""
+if old_drag not in source:
+    raise SystemExit("Could not locate crop drag clamp calculation.")
+source = source.replace(old_drag, new_drag, 1)
+
 old_appear = """                    .onAppear { cropAreaSize = geometry.size }"""
 new_appear = """                    .onAppear { updateCropAreaSize(geometry.size) }
                     .onChange(of: geometry.size) { _, newSize in
