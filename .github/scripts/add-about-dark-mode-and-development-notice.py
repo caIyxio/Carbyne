@@ -40,6 +40,41 @@ text = text.replace('?? "202611170158000001"', '?? "202611170160000001"')
 text = text.replace('?? "158"', '?? "160"')
 text = text.replace('Label("Dark mode and appearance settings", systemImage: "moon.fill")',
                     'Label("Automatic appearance based on iOS settings", systemImage: "circle.lefthalf.filled")')
+if "struct CarbyneAboutView:" not in text:
+    text += r"""
+
+struct CarbyneAboutView: View {
+    private var info: [String: Any] { Bundle.main.infoDictionary ?? [:] }
+    private var version: String { info["CFBundleShortVersionString"] as? String ?? "26.0.1" }
+    private var build: String { info["CFBundleVersion"] as? String ?? "161" }
+    private var serial: String { info["CarbyneBuildSerial"] as? String ?? "202611170161000001" }
+
+    var body: some View {
+        List {
+            Section("Version") {
+                LabeledContent("Carbyne", value: version)
+                LabeledContent("Build", value: build)
+                LabeledContent("Serial number") {
+                    Text(serial).font(.system(.footnote, design: .monospaced)).textSelection(.enabled)
+                }
+            }
+            Section("What's new") {
+                Label("Automatic appearance based on iOS settings", systemImage: "circle.lefthalf.filled")
+                Label("About page with build details", systemImage: "info.circle")
+                Label("Updated navigation icons and Spotlights naming", systemImage: "rectangle.stack.play")
+                Label("Private development notice and testing restrictions", systemImage: "hammer.fill")
+                Label("Improved speech-recognition fallback", systemImage: "waveform")
+            }
+            Section("Development build") {
+                Text("This is a private development version of Carbyne. Features may be incomplete or change without notice.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("About Carbyne")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+"""
 p.write_text(text)
 
 # Compact private development notice, shown once per build serial.
