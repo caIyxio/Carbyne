@@ -80,7 +80,7 @@ text = text.replace(
 
             NEW: Automatic iOS appearance, About/version details, refreshed navigation, Spotlights naming, and an improved speech-recognition fallback.
 
-            Version 26.0.1  •  Serial \\(developmentSerial)
+            Version 26.0.1  •  Serial \(developmentSerial)
             """)
         }
 '''
