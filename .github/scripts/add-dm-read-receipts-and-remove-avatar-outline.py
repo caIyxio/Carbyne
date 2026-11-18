@@ -54,6 +54,7 @@ replace("ContentView.swift", """                        NavigationLink {
                             .padding(.vertical, 4)
                         }
                         .listRowBackground(CarbynePalette.background)
+                        .listRowSeparator(.hidden)
 """, "Apply charcoal to DM conversation rows")
 
 replace("CarbyneModels.swift", """    let attachmentSize: Int64?
