@@ -3,21 +3,12 @@ from pathlib import Path
 path = Path("ios/Carbyne/Sources/CarbyneNativeTabController.swift")
 source = path.read_text()
 
-old_initial = """        controller.tabBar.isTranslucent = true
-        controller.tabBar.isHidden = isChatThreadOpen
-
-        let children = makeHostingControllers()
-"""
-new_initial = """        controller.tabBar.isTranslucent = true
-        controller.tabBar.isHidden = isChatThreadOpen
-        controller.additionalSafeAreaInsets.bottom = isChatThreadOpen ? -controller.tabBar.bounds.height : 0
-
-        let children = makeHostingControllers()
-"""
-if old_initial in source:
-    source = source.replace(old_initial, new_initial, 1)
-elif new_initial not in source:
-    raise SystemExit("Initial tab bar visibility block not found")
+line_initial = "        controller.tabBar.isHidden = isChatThreadOpen\n"
+insert_initial = line_initial + "        controller.additionalSafeAreaInsets.bottom = isChatThreadOpen ? -controller.tabBar.bounds.height : 0\n"
+if "controller.additionalSafeAreaInsets.bottom = isChatThreadOpen ? -controller.tabBar.bounds.height : 0" not in source:
+    if source.count(line_initial) != 1:
+        raise SystemExit("Initial tab bar visibility line not found uniquely")
+    source = source.replace(line_initial, insert_initial, 1)
 
 old_update = """        if controller.tabBar.isHidden != isChatThreadOpen {
             controller.tabBar.isHidden = isChatThreadOpen
