@@ -116,6 +116,8 @@ jobs:
         run: python3 .github/scripts/fix-chat-hidden-tabbar-bottom-inset.py
       - name: Confirm chat bottom inset patch
         run: grep -n 'additionalSafeAreaInsets.bottom' ios/Carbyne/Sources/CarbyneNativeTabController.swift
+      - name: Add profile likes metric and future video/Spotlight likes API
+        run: python3 .github/scripts/add-profile-likes-api.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
