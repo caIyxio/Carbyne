@@ -112,6 +112,8 @@ jobs:
         run: python3 .github/scripts/refine-message-receipts-animation-and-profile-actions.py
       - name: Hide the bottom tab bar while a chat thread is open
         run: python3 .github/scripts/hide-tab-bar-inside-chat.py
+      - name: Fix chat bottom safe-area sizing when tab bar is hidden
+        run: python3 .github/scripts/hide-tab-bar-inside-chat.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
