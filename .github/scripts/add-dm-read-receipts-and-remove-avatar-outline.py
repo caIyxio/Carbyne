@@ -72,13 +72,19 @@ replace("CarbyneModels.swift", """        case attachmentSize = "attachment_size
 replace("CarbyneStore.swift", """    func signedAttachmentURL(path: String) async throws -> URL {
 """, """    func markMessagesRead(from peer: CarbyneProfile) async {
         guard let userID = session?.user.id else { return }
+        let unreadIDs = messages
+            .filter { $0.senderID == peer.id && $0.recipientID == userID && $0.readAt == nil }
+            .map(\.id)
+        guard !unreadIDs.isEmpty else { return }
         do {
-            try await supabase.from("messages")
-                .update(["read_at": ISO8601DateFormatter().string(from: Date())])
-                .eq("recipient_id", value: userID.uuidString)
-                .eq("sender_id", value: peer.id.uuidString)
-                .is("read_at", value: "null")
-                .execute()
+            let timestamp = ISO8601DateFormatter().string(from: Date())
+            for messageID in unreadIDs {
+                try await supabase.from("messages")
+                    .update(["read_at": timestamp])
+                    .eq("id", value: messageID.uuidString)
+                    .eq("recipient_id", value: userID.uuidString)
+                    .execute()
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
