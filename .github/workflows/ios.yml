@@ -120,6 +120,8 @@ jobs:
         run: python3 .github/scripts/add-profile-likes-api.py
       - name: Fix optional profile likes refresh task before compiling
         run: python3 .github/scripts/fix-profile-likes-optional-task.py
+      - name: Load account profiles, isolate account data, and reset all tabs on switch
+        run: python3 .github/scripts/fix-account-switch-data-isolation-and-reset-tabs.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
