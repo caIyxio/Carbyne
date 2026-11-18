@@ -101,6 +101,7 @@ controller = once(controller,
 ''',
 '''        controller.tabBar.isTranslucent = true
         controller.tabBar.isHidden = isChatThreadOpen
+        controller.additionalSafeAreaInsets.bottom = isChatThreadOpen ? -controller.tabBar.bounds.height : 0
 
         let children = makeHostingControllers()
 ''', 'Set initial native tab bar visibility')
