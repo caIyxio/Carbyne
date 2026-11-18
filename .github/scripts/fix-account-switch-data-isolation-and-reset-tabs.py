@@ -153,14 +153,16 @@ sheets = replace_once(
                     showAddAccount = true""",
     "add account section anchor"
 )
-# Close the conditional after the accounts section, before the add-account section.
+# Close the conditional after the Accounts section.
 sheets = replace_once(
     sheets,
-    """            }
+    """                }
+            }
             Section {
                 Button {
                     showAddAccount = true""",
-    """            }
+    """                }
+            }
             }
             Section {
                 Button {
