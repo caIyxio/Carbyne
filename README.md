@@ -38,3 +38,18 @@ There is currently no conversations/messages table, posts/video table, or video 
 The compressed source bundle is stored as ordered text chunks so it can be committed through GitHub's text-file API without altering the original bytes. To unpack it locally from the repository root, use the commands above.
 
 The `Carbyne.png` logo mentioned in the project brief was not present in the supplied ZIP or the repository's original `main` tree, so the app currently uses a native text wordmark rather than substituting an unrelated image.
+
+## Profile likes and future video API
+
+The iOS profile now reads its aggregate likes count from the `profile_like_counts` view. It totals likes across both supported content types: `video` and `spotlight`. A profile with no registered content naturally reports zero.
+
+The shared API is intentionally content-table agnostic so the future video implementation can use it without replacing the profile counter:
+
+1. After creating a video or Spotlight row, register its UUID with `CarbyneStore.registerContent(id:type:)` using `.video` or `.spotlight`.
+2. Like it with `CarbyneStore.likeContent(id:creatorID:)`.
+3. Remove a like with `CarbyneStore.unlikeContent(id:creatorID:)`.
+4. Refresh the profile aggregate with `refreshProfileLikes(for:)`.
+
+The corresponding REST resources are `content_items`, `content_likes`, and `profile_like_counts`. The content registry stores the owner and type; the likes table stores one like per user/content pair. RLS restricts content registration to the signed-in creator, prevents self-likes, and allows users to remove only their own likes. When the future video and Spotlight tables are added, their row UUIDs should be used as the registry IDs.
+
+The production migration is recorded at `supabase/migrations/202611180001_add_content_likes_api.sql`.
