@@ -24,6 +24,32 @@ content = replace_once(content,
     "            MessagesScreen(openAuth: { showAuth = true })\n",
     "            MessagesScreen(openAuth: { showAuth = true }, setTabBarHidden: { isChatThreadOpen = $0 })\n",
     "Wire iPad messages screen")
+content = replace_once(content,
+    "struct MessagesScreen: View {\n    @EnvironmentObject private var store: CarbyneStore\n    let openAuth: () -> Void\n",
+    "struct MessagesScreen: View {\n    @EnvironmentObject private var store: CarbyneStore\n    let openAuth: () -> Void\n    var setTabBarHidden: (Bool) -> Void = { _ in }\n",
+    "Add MessagesScreen callback")
+content = replace_once(content,
+    "ChatThreadScreen(profile: conversation.profile)",
+    "ChatThreadScreen(profile: conversation.profile, onTabBarVisibilityChange: setTabBarHidden)",
+    "Connect chat thread visibility")
+
+start = content.index("struct ChatThreadScreen: View {")
+end = content.find("\nstruct ", start + 10)
+if end < 0: end = len(content)
+chat = content[start:end]
+chat = replace_once(chat,
+    "    let profile: CarbyneProfile\n",
+    "    let profile: CarbyneProfile\n    var onTabBarVisibilityChange: (Bool) -> Void = { _ in }\n",
+    "Add ChatThreadScreen callback")
+if ".onAppear { onTabBarVisibilityChange(true) }" not in chat:
+    if "        .task {\n" not in chat:
+        raise SystemExit("ChatThreadScreen task modifier not found")
+    chat = chat.replace("        .task {\n", "        .onAppear { onTabBarVisibilityChange(true) }\n        .task {\n", 1)
+if "onTabBarVisibilityChange(false)" not in chat:
+    old = "        .onDisappear {\n            if store.activeChatProfile?.id == profile.id { store.activeChatProfile = nil }\n        }"
+    if old not in chat: raise SystemExit("ChatThreadScreen onDisappear block not found")
+    chat = chat.replace(old, "        .onDisappear {\n            onTabBarVisibilityChange(false)\n            if store.activeChatProfile?.id == profile.id { store.activeChatProfile = nil }\n        }", 1)
+content = content[:start] + chat + content[end:]
 content_path.write_text(content)
 
 controller_path = root / "CarbyneNativeTabController.swift"
@@ -45,28 +71,4 @@ controller = replace_once(controller,
     "                MessagesScreen(openAuth: showAuth, setTabBarHidden: { isChatThreadOpen = $0 })\n",
     "Wire native messages screen")
 controller_path.write_text(controller)
-
-# MessagesScreen and ChatThreadScreen live in the source bundle's ContentView.swift.
-content = content_path.read_text()
-content = replace_once(content,
-    "struct MessagesScreen: View {\n    @EnvironmentObject private var store: CarbyneStore\n    let openAuth: () -> Void\n",
-    "struct MessagesScreen: View {\n    @EnvironmentObject private var store: CarbyneStore\n    let openAuth: () -> Void\n    var setTabBarHidden: (Bool) -> Void = { _ in }\n",
-    "Add MessagesScreen callback")
-content = replace_once(content,
-    "ChatThreadScreen(profile: conversation.profile)",
-    "ChatThreadScreen(profile: conversation.profile, onTabBarVisibilityChange: setTabBarHidden)",
-    "Connect chat thread visibility")
-content = replace_once(content,
-    "struct ChatThreadScreen: View {\n    @Environment(\\.dismiss) private var dismiss\n    @EnvironmentObject private var store: CarbyneStore\n    let profile: CarbyneProfile\n",
-    "struct ChatThreadScreen: View {\n    @Environment(\\.dismiss) private var dismiss\n    @EnvironmentObject private var store: CarbyneStore\n    let profile: CarbyneProfile\n    var onTabBarVisibilityChange: (Bool) -> Void = { _ in }\n",
-    "Add ChatThreadScreen callback")
-content = replace_once(content,
-    "        .onChange(of: selectedPhoto) { _, item in\n",
-    "        .onAppear { onTabBarVisibilityChange(true) }\n        .onChange(of: selectedPhoto) { _, item in\n",
-    "Hide tab bar on chat appear")
-content = replace_once(content,
-    "        .onDisappear {\n            if store.activeChatProfile?.id == profile.id { store.activeChatProfile = nil }\n        }\n",
-    "        .onDisappear {\n            onTabBarVisibilityChange(false)\n            if store.activeChatProfile?.id == profile.id { store.activeChatProfile = nil }\n        }\n",
-    "Restore tab bar on chat exit")
-content_path.write_text(content)
 print("Chat threads now hide the native tab bar and restore it when leaving the thread.")
