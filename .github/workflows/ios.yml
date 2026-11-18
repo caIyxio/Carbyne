@@ -118,6 +118,8 @@ jobs:
         run: grep -n 'additionalSafeAreaInsets.bottom' ios/Carbyne/Sources/CarbyneNativeTabController.swift
       - name: Add profile likes metric and future video/Spotlight likes API
         run: python3 .github/scripts/add-profile-likes-api.py
+      - name: Fix optional profile likes refresh task before compiling
+        run: python3 .github/scripts/fix-profile-likes-optional-task.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
