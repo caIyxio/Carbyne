@@ -3,170 +3,132 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#111014">
+  <meta name="theme-color" content="#071f49">
   <meta name="description" content="Carbyne is temporarily under maintenance. We'll be back soon.">
   <title>Carbyne — Back soon</title>
   <style>
-    :root {
-      color-scheme: dark;
-      --ink: #f7f4f5;
-      --muted: #aaa3ad;
-      --bg: #111014;
-      --sunset: #ff694f;
-      --pink: #f02e83;
-      --violet: #743de0;
-    }
-    * { box-sizing: border-box; }
+    :root { color-scheme: dark; --navy:#06234f; --ink:#f7f8ff; --muted:#d8e2f5; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; }
     body {
-      margin: 0;
-      min-height: 100svh;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      -webkit-font-smoothing: antialiased;
+      min-height:100svh; overflow-x:hidden; background:#d9eafa; color:var(--ink);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      -webkit-font-smoothing:antialiased;
     }
-    .page { width: min(1180px, calc(100% - 56px)); margin: 0 auto; }
-    header {
-      height: 86px; display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid rgba(255,255,255,.11);
+    .mosaic {
+      position:relative; min-height:100svh; display:grid; grid-template-columns:repeat(12,1fr);
+      grid-template-rows:minmax(250px,46svh) minmax(250px,54svh); gap:0; overflow:hidden;
+      background:#b7dafa;
     }
-    .wordmark { font-size: 17px; font-weight: 760; letter-spacing: .19em; }
-    .wordmark span { color: var(--pink); }
-    .status { color: #c7c0c9; font-size: 12px; letter-spacing: .045em; }
-    .status:before {
-      content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-      background: var(--sunset); margin: 0 10px 1px 0;
-      box-shadow: 0 0 13px rgba(255,105,79,.65);
+    .panel { position:relative; overflow:hidden; isolation:isolate; }
+    .top-a { grid-column:1/3; grid-row:1; background:linear-gradient(145deg,#1b9bd0,#5f55b6 70%,#a04c9b); }
+    .top-b { grid-column:3/8; grid-row:1; background:#dff3ff; }
+    .top-c { grid-column:8/13; grid-row:1; background:linear-gradient(130deg,#08a9d3,#36c5e8); }
+    .bottom-a { grid-column:1/4; grid-row:2; background:#65c8f4; }
+    .bottom-b { grid-column:4/13; grid-row:2; background:#7867bd; }
+    /* Abstract artwork, built from CSS shapes rather than product photos or icon packs. */
+    .top-a:before,.top-a:after { content:""; position:absolute; border-radius:50%; }
+    .top-a:before {
+      width:250px;height:250px;left:-105px;top:42px;
+      background:repeating-conic-gradient(from 12deg,#ffb36e 0 9deg,#f34b87 9deg 18deg,#683fc0 18deg 27deg,#1a9fdb 27deg 36deg);
+      -webkit-mask:radial-gradient(circle,transparent 0 28%,#000 29% 68%,transparent 69%);
+      mask:radial-gradient(circle,transparent 0 28%,#000 29% 68%,transparent 69%);
     }
-    main { padding: 34px 0 46px; }
-    .grid {
-      display: grid; gap: 14px;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      grid-template-rows: 205px 205px;
+    .top-a:after {
+      width:170px;height:170px;right:-55px;bottom:-50px;
+      background:radial-gradient(circle at 35% 30%,#ffd49b,#f45c86 48%,#713fb7 80%);
+      box-shadow:0 0 0 18px #ffffff20,0 0 0 38px #ffffff12;
     }
-    .tile { position: relative; overflow: hidden; border-radius: 24px; isolation: isolate; }
+    .top-b:before {
+      content:"";position:absolute;width:min(34vw,290px);aspect-ratio:1;left:50%;top:50%;
+      transform:translate(-50%,-50%) rotate(-12deg);border-radius:50%;
+      background:conic-gradient(from 20deg,#168ce1 0 12.5%,#eaf7ff 12.5% 25%,#6a55c6 25% 37.5%,#eaf7ff 37.5% 50%,#168ce1 50% 62.5%,#eaf7ff 62.5% 75%,#6a55c6 75% 87.5%,#eaf7ff 87.5%);
+      -webkit-mask:radial-gradient(circle,transparent 0 17%,#000 18% 70%,transparent 71%);
+      mask:radial-gradient(circle,transparent 0 17%,#000 18% 70%,transparent 71%);
+    }
+    .top-b:after {
+      content:"";position:absolute;width:13px;height:78%;left:50%;top:11%;background:#f7fbff;
+      transform:rotate(45deg);border-radius:20px;opacity:.9;
+    }
+    .top-c:before {
+      content:"";position:absolute;width:360px;height:360px;right:-75px;top:-90px;border-radius:50%;
+      background:radial-gradient(circle at 35% 35%,#f8fcff 0 13%,#c9e9fa 14% 24%,#f9fbff 25% 42%,#b5dff5 43% 48%,transparent 49%);
+      filter:drop-shadow(0 18px 20px #006a9b30);
+    }
+    .top-c:after {
+      content:"";position:absolute;width:230px;height:230px;right:12%;bottom:-150px;border-radius:50%;
+      border:2px solid #ffffffa8;box-shadow:0 0 0 18px #ffffff20,0 0 0 38px #ffffff16;
+    }
+    .bottom-a:before {
+      content:"";position:absolute;width:380px;height:380px;left:50%;top:50%;transform:translate(-50%,-50%);
+      background:radial-gradient(circle,#f7fbff 0 19%,#d6efff 20% 21%,transparent 22%);
+      filter:drop-shadow(0 0 0 #fff);
+    }
+    .bottom-a:after {
+      content:"";position:absolute;width:150px;height:150px;left:12%;top:14%;border-radius:50%;
+      background:linear-gradient(145deg,#fff,#dcecff);box-shadow:180px 165px 0 -8px #f7fbff, -70px 270px 0 -18px #f7fbff;
+    }
+    .bottom-b:before {
+      content:"";position:absolute;inset:-20%;
+      background:
+        radial-gradient(circle at 18% 25%,#fff 0 13px,transparent 15px),
+        radial-gradient(circle at 48% 17%,#fff 0 18px,transparent 20px),
+        radial-gradient(circle at 78% 34%,#fff 0 15px,transparent 17px),
+        radial-gradient(circle at 30% 68%,#fff 0 19px,transparent 21px),
+        radial-gradient(circle at 65% 76%,#fff 0 17px,transparent 19px),
+        linear-gradient(30deg,transparent 49.7%,#ffffffb8 50%,transparent 50.3%),
+        linear-gradient(145deg,transparent 49.7%,#ffffff9c 50%,transparent 50.3%);
+      opacity:.95;
+    }
+    .bottom-b:after {
+      content:"";position:absolute;width:180px;height:180px;right:8%;top:12%;border-radius:50%;
+      border:2px solid #ffffffa8;box-shadow:0 0 0 24px #ffffff16,0 0 0 48px #ffffff12;
+    }
     .hero {
-      grid-column: 2 / 4; grid-row: 1 / 3;
-      display: flex; flex-direction: column; justify-content: center;
-      padding: clamp(28px, 5vw, 58px);
-      background: #1d1922;
+      position:absolute;z-index:5;left:20.5%;right:20.5%;top:calc(46svh - 6px);
+      min-height:300px;transform:translateY(-50%);display:flex;flex-direction:column;
+      align-items:center;justify-content:center;text-align:center;padding:42px 36px;
+      background:var(--navy);box-shadow:0 22px 70px #001a3a30;
     }
-    .hero:before {
-      content: ""; position: absolute; z-index: -1; width: 510px; height: 510px;
-      right: -245px; bottom: -315px; border-radius: 50%;
-      border: 1px solid rgba(255,255,255,.19);
-      box-shadow: 0 0 0 28px rgba(255,255,255,.025), 0 0 0 58px rgba(255,255,255,.022),
-                  0 0 0 91px rgba(255,255,255,.018), 0 0 0 126px rgba(255,255,255,.014);
+    .eyebrow { margin-bottom:18px;color:#9bbbe8;font-size:10px;font-weight:650;letter-spacing:.2em;text-transform:uppercase; }
+    h1 { margin:0;font-size:clamp(38px,4.2vw,58px);line-height:1.08;letter-spacing:-.055em;font-weight:650; }
+    .copy { max-width:560px;margin:13px 0 0;color:#d8e2f5;font-size:clamp(15px,1.7vw,20px);line-height:1.5; }
+    .footer { position:absolute;z-index:6;left:28px;right:28px;bottom:17px;display:flex;justify-content:space-between;
+      color:#ffffffad;font-size:11px;letter-spacing:.04em;pointer-events:none; }
+    @media(max-width:700px) {
+      .mosaic { grid-template-rows:35svh 65svh; }
+      .top-a { grid-column:1/4; }
+      .top-b { grid-column:4/9; }
+      .top-c { grid-column:9/13; }
+      .bottom-a { grid-column:1/5; }
+      .bottom-b { grid-column:5/13; }
+      .hero { left:0;right:0;top:50%;min-height:250px;padding:34px 24px; }
+      h1 { font-size:clamp(36px,9vw,48px); }
+      .copy { max-width:340px;font-size:15px; }
+      .eyebrow { font-size:9px; }
+      .top-b:before { width:42vw; }
+      .footer { left:16px;right:16px;bottom:12px;font-size:10px; }
     }
-    .hero:after {
-      content: ""; position: absolute; z-index: -1; width: 290px; height: 290px;
-      right: -85px; top: -125px; border-radius: 50%;
-      background: linear-gradient(145deg, rgba(255,105,79,.82), rgba(240,46,131,.62) 55%, rgba(116,61,224,.55));
-      filter: blur(1px); opacity: .72;
-    }
-    .eyebrow { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #d8a6b9; font-weight: 650; }
-    h1 { margin: 23px 0 17px; max-width: 570px; font-size: clamp(46px, 6vw, 76px); line-height: .96; letter-spacing: -.075em; font-weight: 680; }
-    h1 span { color: #ff8c91; }
-    .copy { max-width: 400px; margin: 0; color: #c9c1cc; font-size: 15px; line-height: 1.75; }
-    .hero-bottom { position: absolute; left: clamp(28px, 5vw, 58px); bottom: 28px; color: #8f8794; font-size: 11px; letter-spacing: .04em; }
-    .art { min-height: 0; }
-    .art-one { background: linear-gradient(145deg, #e94c70, #a62b91 70%, #5a328d); }
-    .art-one:before {
-      content: ""; position: absolute; width: 170px; height: 170px; border-radius: 50%;
-      top: 35px; left: 50%; transform: translateX(-50%);
-      background: linear-gradient(135deg, #ffbd7a, #ff6d70 55%, #d62d8c);
-      box-shadow: 0 18px 55px rgba(41,10,46,.35);
-    }
-    .art-one:after {
-      content: ""; position: absolute; width: 205px; height: 70px; border: 1px solid rgba(255,255,255,.55);
-      border-radius: 50%; top: 86px; left: 50%; transform: translateX(-50%) rotate(-28deg);
-    }
-    .art-two { background: #25202d; }
-    .art-two:before {
-      content: ""; position: absolute; width: 150px; height: 150px; border-radius: 50%;
-      left: 50%; top: 50%; transform: translate(-50%,-50%);
-      background: repeating-conic-gradient(from 8deg, #ffb15d 0deg 9deg, #fa4f79 9deg 18deg, #9d45bd 18deg 27deg, #4d3c9c 27deg 36deg);
-      -webkit-mask: radial-gradient(circle, transparent 0 27%, #000 28% 68%, transparent 69%);
-      mask: radial-gradient(circle, transparent 0 27%, #000 28% 68%, transparent 69%);
-      filter: saturate(1.1);
-    }
-    .art-three { background: #25202d; }
-    .art-three:before {
-      content: ""; position: absolute; inset: 0;
-      background: repeating-linear-gradient(135deg, transparent 0 17px, rgba(255,255,255,.08) 18px 19px, transparent 20px 37px);
-      mask-image: linear-gradient(135deg, #000, transparent 85%);
-    }
-    .art-three:after {
-      content: ""; position: absolute; width: 125px; height: 125px; right: 18px; bottom: -34px;
-      border-radius: 35px; transform: rotate(35deg);
-      background: linear-gradient(135deg, #ff8a56, #ef327f 55%, #753ee0);
-      box-shadow: 0 0 50px rgba(239,50,127,.25);
-    }
-    .art-four { background: linear-gradient(135deg, #3b2450, #1e1b2c); }
-    .art-four:before {
-      content: ""; position: absolute; width: 220px; height: 220px; border-radius: 50%;
-      border: 1px solid rgba(255,255,255,.4); left: 50%; top: 50%; transform: translate(-50%,-50%);
-      box-shadow: 0 0 0 17px rgba(255,255,255,.035), 0 0 0 35px rgba(255,255,255,.03),
-                  0 0 0 54px rgba(255,255,255,.025), 0 0 0 74px rgba(255,255,255,.02);
-    }
-    .art-four:after {
-      content: ""; position: absolute; width: 72px; height: 72px; border-radius: 50%;
-      left: 50%; top: 50%; transform: translate(-50%,-50%);
-      background: linear-gradient(135deg, #ffb06d, #f13d83 65%, #8b48da);
-      box-shadow: 0 0 55px rgba(241,61,131,.45);
-    }
-    footer {
-      min-height: 66px; border-top: 1px solid rgba(255,255,255,.11);
-      display: flex; align-items: center; justify-content: space-between;
-      color: #77717d; font-size: 11px; letter-spacing: .035em;
-    }
-    @media (max-width: 760px) {
-      .page { width: min(100% - 32px, 540px); }
-      header { height: 72px; }
-      main { padding: 20px 0 28px; }
-      .grid { grid-template-columns: repeat(2, minmax(0,1fr)); grid-template-rows: 150px 290px 150px; gap: 10px; }
-      .tile { border-radius: 19px; }
-      .hero { grid-column: 1 / 3; grid-row: 2; padding: 28px; }
-      .hero-bottom { left: 28px; bottom: 23px; }
-      h1 { font-size: clamp(48px, 12vw, 68px); margin: 20px 0 14px; }
-      .copy { font-size: 14px; max-width: 330px; }
-      .art-one { grid-column: 1; grid-row: 1; }
-      .art-two { grid-column: 2; grid-row: 1; }
-      .art-three { grid-column: 1; grid-row: 3; }
-      .art-four { grid-column: 2; grid-row: 3; }
-      .art-one:before { width: 125px; height: 125px; top: 13px; }
-      .art-one:after { width: 150px; top: 44px; }
-      .art-two:before { width: 115px; height: 115px; }
-      footer { min-height: 60px; }
-    }
-    @media (prefers-reduced-motion: no-preference) {
-      .art-one:before { animation: float 9s ease-in-out infinite alternate; }
-      @keyframes float { to { transform: translate(-50%, -8px); } }
+    @media(prefers-reduced-motion:no-preference) {
+      .top-a:after { animation:drift 10s ease-in-out infinite alternate; }
+      @keyframes drift { to { transform:translate(-9px,-12px); } }
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <header>
-      <div class="wordmark">CARB<span>Y</span>NE</div>
-      <div class="status">Maintenance in progress</div>
-    </header>
-    <main>
-      <div class="grid">
-        <div class="tile art art-one" aria-hidden="true"></div>
-        <section class="tile hero" aria-labelledby="maintenance-title">
-          <div class="eyebrow">Carbyne / Temporary maintenance</div>
-          <h1 id="maintenance-title">A short pause.<br><span>Back soon.</span></h1>
-          <p class="copy">We’re making a few improvements behind the scenes. Carbyne will be back as soon as the work is complete.</p>
-          <div class="hero-bottom">Thanks for bearing with us.</div>
-        </section>
-        <div class="tile art art-two" aria-hidden="true"></div>
-        <div class="tile art art-three" aria-hidden="true"></div>
-        <div class="tile art art-four" aria-hidden="true"></div>
-      </div>
-    </main>
-    <footer><span>© <span id="year"></span> Carbyne</span><span>Built for what’s next.</span></footer>
-  </div>
+  <main class="mosaic" aria-label="Carbyne maintenance page">
+    <div class="panel top-a" aria-hidden="true"></div>
+    <div class="panel top-b" aria-hidden="true"></div>
+    <div class="panel top-c" aria-hidden="true"></div>
+    <div class="panel bottom-a" aria-hidden="true"></div>
+    <div class="panel bottom-b" aria-hidden="true"></div>
+    <section class="hero" aria-labelledby="maintenance-title">
+      <div class="eyebrow">CARBYNE · TEMPORARY MAINTENANCE</div>
+      <h1 id="maintenance-title">A short pause. Back soon.</h1>
+      <p class="copy">We’re making a few improvements behind the scenes. Carbyne will be back as soon as the work is complete.</p>
+    </section>
+    <footer class="footer"><span>© <span id="year"></span> Carbyne</span><span>Built for what’s next.</span></footer>
+  </main>
   <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
 </body>
 </html>
