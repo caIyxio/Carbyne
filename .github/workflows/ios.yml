@@ -122,6 +122,8 @@ jobs:
         run: python3 .github/scripts/fix-profile-likes-optional-task.py
       - name: Load account profiles, isolate account data, and reset all tabs on switch
         run: python3 .github/scripts/fix-account-switch-data-isolation-and-reset-tabs.py
+      - name: Fix optional profile likes task, use clapperboard icon, and make Direct Messages a Settings tab
+        run: python3 .github/scripts/fix-profile-likes-and-settings-tabs.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
