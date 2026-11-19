@@ -133,18 +133,21 @@ jobs:
           if [ -z "$SOURCE_DIR" ]; then echo "Swift sources directory not found"; exit 1; fi
           ASSET_DIR="$SOURCE_DIR/Assets.xcassets/CarbyneWordmark.imageset"
           mkdir -p "$ASSET_DIR"
-          base64 -D -i .github/assets/carbyne-wordmark.png.b64 -o "$ASSET_DIR/CarbyneWordmark.png"
+          cp .github/assets/carbyne-wordmark.svg "$ASSET_DIR/CarbyneWordmark.svg"
           cat > "$ASSET_DIR/Contents.json" <<'JSON'
           {
             "images": [
               {
-                "filename": "CarbyneWordmark.png",
+                "filename": "CarbyneWordmark.svg",
                 "idiom": "universal"
               }
             ],
             "info": {
               "author": "xcode",
-              "version": 1
+              "version": 1,
+              "properties": {
+                "preserves-vector-representation": true
+              }
             }
           }
           JSON
