@@ -1,0 +1,6 @@
+[build]
+  command = "cat .github/source-bundle/part-*.b64 | base64 --decode > /tmp/carbyne-project-source.tar.gz && tar -xzf /tmp/carbyne-project-source.tar.gz -C . && npm ci && npm run validate && npm run build && cp maintenance/index.html dist/index.html"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
