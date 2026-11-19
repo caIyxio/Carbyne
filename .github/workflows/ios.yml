@@ -233,14 +233,15 @@ jobs:
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
           cp -R "$APP" "$RUNNER_TEMP/ipa/Payload/Carbyne.app"
           cd "$RUNNER_TEMP/ipa"
-          /usr/bin/zip -qry "$GITHUB_WORKSPACE/Carbyne-unsigned.ipa" Payload
-          test -s "$GITHUB_WORKSPACE/Carbyne-unsigned.ipa"
-          unzip -t "$GITHUB_WORKSPACE/Carbyne-unsigned.ipa"
+          IPA_NAME="Carbyne-build${GITHUB_RUN_NUMBER}.ipa"
+          /usr/bin/zip -qry "$GITHUB_WORKSPACE/$IPA_NAME" Payload
+          test -s "$GITHUB_WORKSPACE/$IPA_NAME"
+          unzip -t "$GITHUB_WORKSPACE/$IPA_NAME"
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:
-          name: Carbyne-unsigned-IPA
-          path: Carbyne-unsigned.ipa
+          name: Carbyne-build${{ github.run_number }}
+          path: Carbyne-build${{ github.run_number }}.ipa
           if-no-files-found: error
           retention-days: 30
 
