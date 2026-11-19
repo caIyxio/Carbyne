@@ -3,83 +3,170 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101014">
-  <meta name="description" content="Carbyne is temporarily under maintenance. We'll be back shortly.">
-  <title>Carbyne — Under maintenance</title>
+  <meta name="theme-color" content="#111014">
+  <meta name="description" content="Carbyne is temporarily under maintenance. We'll be back soon.">
+  <title>Carbyne — Back soon</title>
   <style>
-    :root{color-scheme:dark;--bg:#101014;--panel:#19191f;--muted:#a5a1ad;--white:#f8f5fa;--orange:#ff7048;--coral:#ff386b;--pink:#e92391;--magenta:#b52dad;--violet:#7139c6}
-    *{box-sizing:border-box}
-    body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 78% 4%,rgba(113,57,198,.16),transparent 32rem),var(--bg);color:var(--white);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;flex-direction:column}
-    .shell{width:min(1120px,calc(100% - 48px));margin:0 auto;flex:1;display:flex;flex-direction:column}
-    header{height:88px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08)}
-    .brand{font-size:18px;font-weight:800;letter-spacing:.16em}
-    .brand span{color:var(--coral)}
-    .status{display:inline-flex;align-items:center;gap:9px;padding:9px 13px;border:1px solid rgba(255,255,255,.1);border-radius:999px;color:#ded9e3;font-size:12px;letter-spacing:.02em;background:rgba(255,255,255,.035)}
-    .dot{width:7px;height:7px;border-radius:50%;background:var(--orange);box-shadow:0 0 14px rgba(255,112,72,.8)}
-    main{padding:52px 0 44px;display:grid;grid-template-columns:1.35fr .85fr;grid-template-rows:minmax(350px,1fr) 190px;gap:16px;flex:1}
-    .tile{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:26px;background:var(--panel);padding:30px}
-    .hero{grid-row:span 2;display:flex;flex-direction:column;justify-content:space-between;min-height:560px;background:linear-gradient(145deg,rgba(255,112,72,.16),rgba(233,35,145,.12) 46%,rgba(113,57,198,.19)),#19171e}
-    .hero:before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;right:-130px;top:-130px;background:linear-gradient(135deg,var(--orange),var(--coral) 35%,var(--pink) 65%,var(--violet));filter:blur(2px);opacity:.88}
-    .hero:after{content:"";position:absolute;width:270px;height:270px;border-radius:50%;right:70px;top:150px;background:linear-gradient(135deg,rgba(255,255,255,.35),rgba(255,255,255,0));filter:blur(36px);opacity:.35}
-    .hero-content,.hero-foot{position:relative;z-index:1}
-    .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:#f0b4c4;font-weight:700}
-    h1{font-size:clamp(48px,7vw,82px);line-height:.98;letter-spacing:-.065em;margin:26px 0 18px;max-width:620px}
-    h1 .gradient{background:linear-gradient(100deg,#ffb16f 0%,#ff527c 44%,#e92391 72%,#a76be0 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
-    .intro{max-width:440px;color:#d0c9d4;font-size:16px;line-height:1.7;margin:0}
-    .hero-foot{display:flex;align-items:center;gap:12px;color:#d7d0dc;font-size:12px}
-    .orbit{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,var(--orange),var(--coral),var(--magenta),var(--violet));display:grid;place-items:center;flex:none}
-    .orbit:after{content:"";width:10px;height:10px;border:2px solid white;border-radius:50%}
-    .side{display:flex;flex-direction:column;justify-content:space-between}
-    .side h2{font-size:22px;letter-spacing:-.04em;margin:14px 0 8px}
-    .side p{color:var(--muted);font-size:14px;line-height:1.65;margin:0;max-width:340px}
-    .mini-art{height:90px;display:flex;align-items:center;gap:8px}
-    .bar{height:100%;flex:1;border-radius:13px;background:linear-gradient(180deg,var(--orange),var(--coral));opacity:.95}
-    .bar:nth-child(2){height:72%;background:linear-gradient(180deg,var(--coral),var(--pink))}
-    .bar:nth-child(3){height:88%;background:linear-gradient(180deg,var(--pink),var(--magenta))}
-    .bar:nth-child(4){height:58%;background:linear-gradient(180deg,var(--magenta),var(--violet))}
-    .bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
-    .bottom h2{font-size:21px;margin:10px 0 7px;letter-spacing:-.04em}
-    .bottom p{color:var(--muted);font-size:13px;line-height:1.55;margin:0;max-width:260px}
-    .arrow{font-size:26px;color:#ff7891}
-    footer{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:16px;color:#77727e;font-size:12px;border-top:1px solid rgba(255,255,255,.08)}
-    @media(max-width:760px){.shell{width:min(100% - 32px,540px)}header{height:72px}main{padding:24px 0 28px;grid-template-columns:1fr;grid-template-rows:auto;gap:12px}.tile{border-radius:21px;padding:24px}.hero{grid-row:auto;min-height:440px}.hero:before{width:300px;height:300px;right:-120px;top:-110px}.hero:after{width:190px;height:190px;right:15px;top:115px}h1{font-size:clamp(52px,14vw,72px);margin-top:30px}.intro{font-size:15px}.side{min-height:220px}.mini-art{height:58px}.bottom{min-height:165px}footer{padding:18px 0;align-items:flex-start;flex-direction:column;justify-content:center;gap:6px}}
-    @media(prefers-reduced-motion:no-preference){.dot{animation:pulse 2s ease-in-out infinite}@keyframes pulse{50%{opacity:.45;box-shadow:0 0 5px rgba(255,112,72,.4)}}}
+    :root {
+      color-scheme: dark;
+      --ink: #f7f4f5;
+      --muted: #aaa3ad;
+      --bg: #111014;
+      --sunset: #ff694f;
+      --pink: #f02e83;
+      --violet: #743de0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100svh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page { width: min(1180px, calc(100% - 56px)); margin: 0 auto; }
+    header {
+      height: 86px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,.11);
+    }
+    .wordmark { font-size: 17px; font-weight: 760; letter-spacing: .19em; }
+    .wordmark span { color: var(--pink); }
+    .status { color: #c7c0c9; font-size: 12px; letter-spacing: .045em; }
+    .status:before {
+      content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--sunset); margin: 0 10px 1px 0;
+      box-shadow: 0 0 13px rgba(255,105,79,.65);
+    }
+    main { padding: 34px 0 46px; }
+    .grid {
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-rows: 205px 205px;
+    }
+    .tile { position: relative; overflow: hidden; border-radius: 24px; isolation: isolate; }
+    .hero {
+      grid-column: 2 / 4; grid-row: 1 / 3;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: clamp(28px, 5vw, 58px);
+      background: #1d1922;
+    }
+    .hero:before {
+      content: ""; position: absolute; z-index: -1; width: 510px; height: 510px;
+      right: -245px; bottom: -315px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.19);
+      box-shadow: 0 0 0 28px rgba(255,255,255,.025), 0 0 0 58px rgba(255,255,255,.022),
+                  0 0 0 91px rgba(255,255,255,.018), 0 0 0 126px rgba(255,255,255,.014);
+    }
+    .hero:after {
+      content: ""; position: absolute; z-index: -1; width: 290px; height: 290px;
+      right: -85px; top: -125px; border-radius: 50%;
+      background: linear-gradient(145deg, rgba(255,105,79,.82), rgba(240,46,131,.62) 55%, rgba(116,61,224,.55));
+      filter: blur(1px); opacity: .72;
+    }
+    .eyebrow { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #d8a6b9; font-weight: 650; }
+    h1 { margin: 23px 0 17px; max-width: 570px; font-size: clamp(46px, 6vw, 76px); line-height: .96; letter-spacing: -.075em; font-weight: 680; }
+    h1 span { color: #ff8c91; }
+    .copy { max-width: 400px; margin: 0; color: #c9c1cc; font-size: 15px; line-height: 1.75; }
+    .hero-bottom { position: absolute; left: clamp(28px, 5vw, 58px); bottom: 28px; color: #8f8794; font-size: 11px; letter-spacing: .04em; }
+    .art { min-height: 0; }
+    .art-one { background: linear-gradient(145deg, #e94c70, #a62b91 70%, #5a328d); }
+    .art-one:before {
+      content: ""; position: absolute; width: 170px; height: 170px; border-radius: 50%;
+      top: 35px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, #ffbd7a, #ff6d70 55%, #d62d8c);
+      box-shadow: 0 18px 55px rgba(41,10,46,.35);
+    }
+    .art-one:after {
+      content: ""; position: absolute; width: 205px; height: 70px; border: 1px solid rgba(255,255,255,.55);
+      border-radius: 50%; top: 86px; left: 50%; transform: translateX(-50%) rotate(-28deg);
+    }
+    .art-two { background: #25202d; }
+    .art-two:before {
+      content: ""; position: absolute; width: 150px; height: 150px; border-radius: 50%;
+      left: 50%; top: 50%; transform: translate(-50%,-50%);
+      background: repeating-conic-gradient(from 8deg, #ffb15d 0deg 9deg, #fa4f79 9deg 18deg, #9d45bd 18deg 27deg, #4d3c9c 27deg 36deg);
+      -webkit-mask: radial-gradient(circle, transparent 0 27%, #000 28% 68%, transparent 69%);
+      mask: radial-gradient(circle, transparent 0 27%, #000 28% 68%, transparent 69%);
+      filter: saturate(1.1);
+    }
+    .art-three { background: #25202d; }
+    .art-three:before {
+      content: ""; position: absolute; inset: 0;
+      background: repeating-linear-gradient(135deg, transparent 0 17px, rgba(255,255,255,.08) 18px 19px, transparent 20px 37px);
+      mask-image: linear-gradient(135deg, #000, transparent 85%);
+    }
+    .art-three:after {
+      content: ""; position: absolute; width: 125px; height: 125px; right: 18px; bottom: -34px;
+      border-radius: 35px; transform: rotate(35deg);
+      background: linear-gradient(135deg, #ff8a56, #ef327f 55%, #753ee0);
+      box-shadow: 0 0 50px rgba(239,50,127,.25);
+    }
+    .art-four { background: linear-gradient(135deg, #3b2450, #1e1b2c); }
+    .art-four:before {
+      content: ""; position: absolute; width: 220px; height: 220px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.4); left: 50%; top: 50%; transform: translate(-50%,-50%);
+      box-shadow: 0 0 0 17px rgba(255,255,255,.035), 0 0 0 35px rgba(255,255,255,.03),
+                  0 0 0 54px rgba(255,255,255,.025), 0 0 0 74px rgba(255,255,255,.02);
+    }
+    .art-four:after {
+      content: ""; position: absolute; width: 72px; height: 72px; border-radius: 50%;
+      left: 50%; top: 50%; transform: translate(-50%,-50%);
+      background: linear-gradient(135deg, #ffb06d, #f13d83 65%, #8b48da);
+      box-shadow: 0 0 55px rgba(241,61,131,.45);
+    }
+    footer {
+      min-height: 66px; border-top: 1px solid rgba(255,255,255,.11);
+      display: flex; align-items: center; justify-content: space-between;
+      color: #77717d; font-size: 11px; letter-spacing: .035em;
+    }
+    @media (max-width: 760px) {
+      .page { width: min(100% - 32px, 540px); }
+      header { height: 72px; }
+      main { padding: 20px 0 28px; }
+      .grid { grid-template-columns: repeat(2, minmax(0,1fr)); grid-template-rows: 150px 290px 150px; gap: 10px; }
+      .tile { border-radius: 19px; }
+      .hero { grid-column: 1 / 3; grid-row: 2; padding: 28px; }
+      .hero-bottom { left: 28px; bottom: 23px; }
+      h1 { font-size: clamp(48px, 12vw, 68px); margin: 20px 0 14px; }
+      .copy { font-size: 14px; max-width: 330px; }
+      .art-one { grid-column: 1; grid-row: 1; }
+      .art-two { grid-column: 2; grid-row: 1; }
+      .art-three { grid-column: 1; grid-row: 3; }
+      .art-four { grid-column: 2; grid-row: 3; }
+      .art-one:before { width: 125px; height: 125px; top: 13px; }
+      .art-one:after { width: 150px; top: 44px; }
+      .art-two:before { width: 115px; height: 115px; }
+      footer { min-height: 60px; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .art-one:before { animation: float 9s ease-in-out infinite alternate; }
+      @keyframes float { to { transform: translate(-50%, -8px); } }
+    }
   </style>
 </head>
 <body>
-  <div class="shell">
+  <div class="page">
     <header>
-      <div class="brand">CARB<span>Y</span>NE</div>
-      <div class="status"><span class="dot" aria-hidden="true"></span> Maintenance in progress</div>
+      <div class="wordmark">CARB<span>Y</span>NE</div>
+      <div class="status">Maintenance in progress</div>
     </header>
     <main>
-      <section class="tile hero" aria-labelledby="maintenance-title">
-        <div class="hero-content">
-          <div class="eyebrow">A quick pause. A better return.</div>
-          <h1 id="maintenance-title">We’ll be<br><span class="gradient">right back.</span></h1>
-          <p class="intro">Carbyne is currently under maintenance while we make a few improvements behind the scenes. The site will be available again shortly.</p>
-        </div>
-        <div class="hero-foot"><span class="orbit" aria-hidden="true"></span><span>Thanks for your patience while we work on things.</span></div>
-      </section>
-      <section class="tile side">
-        <div>
-          <div class="eyebrow">01 / System update</div>
-          <h2>Making things better.</h2>
-          <p>We’re tuning the experience and taking care of a few things before opening the doors again.</p>
-        </div>
-        <div class="mini-art" aria-hidden="true"><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
-      </section>
-      <section class="tile bottom">
-        <div>
-          <div class="eyebrow">02 / See you soon</div>
-          <h2>Same Carbyne. Fresh improvements.</h2>
-          <p>Your account and content aren’t going anywhere. We’ll be back as soon as maintenance is complete.</p>
-        </div>
-        <span class="arrow" aria-hidden="true">↗</span>
-      </section>
+      <div class="grid">
+        <div class="tile art art-one" aria-hidden="true"></div>
+        <section class="tile hero" aria-labelledby="maintenance-title">
+          <div class="eyebrow">Carbyne / Temporary maintenance</div>
+          <h1 id="maintenance-title">A short pause.<br><span>Back soon.</span></h1>
+          <p class="copy">We’re making a few improvements behind the scenes. Carbyne will be back as soon as the work is complete.</p>
+          <div class="hero-bottom">Thanks for bearing with us.</div>
+        </section>
+        <div class="tile art art-two" aria-hidden="true"></div>
+        <div class="tile art art-three" aria-hidden="true"></div>
+        <div class="tile art art-four" aria-hidden="true"></div>
+      </div>
     </main>
     <footer><span>© <span id="year"></span> Carbyne</span><span>Built for what’s next.</span></footer>
   </div>
-  <script>document.getElementById("year").textContent=new Date().getFullYear();</script>
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
 </body>
 </html>
