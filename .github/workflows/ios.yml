@@ -122,8 +122,32 @@ jobs:
         run: python3 .github/scripts/fix-profile-likes-optional-task.py
       - name: Load account profiles, isolate account data, and reset all tabs on switch
         run: python3 .github/scripts/fix-account-switch-data-isolation-and-reset-tabs.py
-      - name: Fix optional profile likes task, use clapperboard icon, and make Direct Messages a Settings tab
+      - name: Fix optional profile likes task and Spotlights clapperboard icon
         run: python3 .github/scripts/fix-profile-likes-and-settings-tabs.py
+      - name: Replace Carbyne text wordmarks and move Direct Messages into Settings
+        run: python3 .github/scripts/fix-settings-direct-messages-row-and-wordmark.py
+      - name: Install uploaded Carbyne wordmark image asset
+        run: |
+          set -euo pipefail
+          SOURCE_DIR="$(find ios/Carbyne -maxdepth 3 -type d -name Sources -print -quit)"
+          if [ -z "$SOURCE_DIR" ]; then echo "Swift sources directory not found"; exit 1; fi
+          ASSET_DIR="$SOURCE_DIR/Assets.xcassets/CarbyneWordmark.imageset"
+          mkdir -p "$ASSET_DIR"
+          base64 -D -i .github/assets/carbyne-wordmark.png.b64 -o "$ASSET_DIR/CarbyneWordmark.png"
+          cat > "$ASSET_DIR/Contents.json" <<'JSON'
+          {
+            "images": [
+              {
+                "filename": "CarbyneWordmark.png",
+                "idiom": "universal"
+              }
+            ],
+            "info": {
+              "author": "xcode",
+              "version": 1
+            }
+          }
+          JSON
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
