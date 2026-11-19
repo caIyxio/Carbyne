@@ -5,6 +5,8 @@ store_path = Path("ios/Carbyne/Sources/CarbyneStore.swift")
 
 content = content_path.read_text()
 store = store_path.read_text()
+account_sheets_path = Path("ios/Carbyne/Sources/AccountSheets.swift")
+account_sheets = account_sheets_path.read_text()
 
 # Ignore task cancellations instead of showing them as user-facing failures.
 error_handler = '''    func displayableError(_ error: Error) -> String? {
