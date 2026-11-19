@@ -6,15 +6,19 @@ store_path = Path("ios/Carbyne/Sources/CarbyneStore.swift")
 content = content_path.read_text()
 store = store_path.read_text()
 
-if "@Environment(\\.colorScheme) private var colorScheme" not in content:
+home_start = content.index("struct HomeScreen: View {")
+home_end = content.index("\n\nstruct SearchScreen: View {", home_start)
+home_source = content[home_start:home_end]
+if "@Environment(\\.colorScheme) private var colorScheme" not in home_source:
     anchor = "struct HomeScreen: View {\n    @EnvironmentObject private var store: CarbyneStore\n    @Environment(\\.horizontalSizeClass) private var sizeClass\n"
-    if anchor not in content:
+    if anchor not in home_source:
         raise SystemExit("HomeScreen environment declaration not found.")
-    content = content.replace(
+    home_source = home_source.replace(
         anchor,
         anchor + "    @Environment(\\.colorScheme) private var colorScheme\n",
         1
     )
+    content = content[:home_start] + home_source + content[home_end:]
 
 old_header = '''        .safeAreaInset(edge: .top, spacing: 0) {
             HStack {
