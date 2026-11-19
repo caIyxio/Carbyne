@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101014">
+  <meta name="description" content="Carbyne is temporarily under maintenance. We'll be back shortly.">
+  <title>Carbyne — Under maintenance</title>
+  <style>
+    :root{color-scheme:dark;--bg:#101014;--panel:#19191f;--muted:#a5a1ad;--white:#f8f5fa;--orange:#ff7048;--coral:#ff386b;--pink:#e92391;--magenta:#b52dad;--violet:#7139c6}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 78% 4%,rgba(113,57,198,.16),transparent 32rem),var(--bg);color:var(--white);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+    .shell{width:min(1120px,calc(100% - 48px));margin:0 auto;flex:1;display:flex;flex-direction:column}
+    header{height:88px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08)}
+    .brand{font-size:18px;font-weight:800;letter-spacing:.16em}
+    .brand span{color:var(--coral)}
+    .status{display:inline-flex;align-items:center;gap:9px;padding:9px 13px;border:1px solid rgba(255,255,255,.1);border-radius:999px;color:#ded9e3;font-size:12px;letter-spacing:.02em;background:rgba(255,255,255,.035)}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--orange);box-shadow:0 0 14px rgba(255,112,72,.8)}
+    main{padding:52px 0 44px;display:grid;grid-template-columns:1.35fr .85fr;grid-template-rows:minmax(350px,1fr) 190px;gap:16px;flex:1}
+    .tile{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:26px;background:var(--panel);padding:30px}
+    .hero{grid-row:span 2;display:flex;flex-direction:column;justify-content:space-between;min-height:560px;background:linear-gradient(145deg,rgba(255,112,72,.16),rgba(233,35,145,.12) 46%,rgba(113,57,198,.19)),#19171e}
+    .hero:before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;right:-130px;top:-130px;background:linear-gradient(135deg,var(--orange),var(--coral) 35%,var(--pink) 65%,var(--violet));filter:blur(2px);opacity:.88}
+    .hero:after{content:"";position:absolute;width:270px;height:270px;border-radius:50%;right:70px;top:150px;background:linear-gradient(135deg,rgba(255,255,255,.35),rgba(255,255,255,0));filter:blur(36px);opacity:.35}
+    .hero-content,.hero-foot{position:relative;z-index:1}
+    .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:#f0b4c4;font-weight:700}
+    h1{font-size:clamp(48px,7vw,82px);line-height:.98;letter-spacing:-.065em;margin:26px 0 18px;max-width:620px}
+    h1 .gradient{background:linear-gradient(100deg,#ffb16f 0%,#ff527c 44%,#e92391 72%,#a76be0 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .intro{max-width:440px;color:#d0c9d4;font-size:16px;line-height:1.7;margin:0}
+    .hero-foot{display:flex;align-items:center;gap:12px;color:#d7d0dc;font-size:12px}
+    .orbit{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,var(--orange),var(--coral),var(--magenta),var(--violet));display:grid;place-items:center;flex:none}
+    .orbit:after{content:"";width:10px;height:10px;border:2px solid white;border-radius:50%}
+    .side{display:flex;flex-direction:column;justify-content:space-between}
+    .side h2{font-size:22px;letter-spacing:-.04em;margin:14px 0 8px}
+    .side p{color:var(--muted);font-size:14px;line-height:1.65;margin:0;max-width:340px}
+    .mini-art{height:90px;display:flex;align-items:center;gap:8px}
+    .bar{height:100%;flex:1;border-radius:13px;background:linear-gradient(180deg,var(--orange),var(--coral));opacity:.95}
+    .bar:nth-child(2){height:72%;background:linear-gradient(180deg,var(--coral),var(--pink))}
+    .bar:nth-child(3){height:88%;background:linear-gradient(180deg,var(--pink),var(--magenta))}
+    .bar:nth-child(4){height:58%;background:linear-gradient(180deg,var(--magenta),var(--violet))}
+    .bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
+    .bottom h2{font-size:21px;margin:10px 0 7px;letter-spacing:-.04em}
+    .bottom p{color:var(--muted);font-size:13px;line-height:1.55;margin:0;max-width:260px}
+    .arrow{font-size:26px;color:#ff7891}
+    footer{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:16px;color:#77727e;font-size:12px;border-top:1px solid rgba(255,255,255,.08)}
+    @media(max-width:760px){.shell{width:min(100% - 32px,540px)}header{height:72px}main{padding:24px 0 28px;grid-template-columns:1fr;grid-template-rows:auto;gap:12px}.tile{border-radius:21px;padding:24px}.hero{grid-row:auto;min-height:440px}.hero:before{width:300px;height:300px;right:-120px;top:-110px}.hero:after{width:190px;height:190px;right:15px;top:115px}h1{font-size:clamp(52px,14vw,72px);margin-top:30px}.intro{font-size:15px}.side{min-height:220px}.mini-art{height:58px}.bottom{min-height:165px}footer{padding:18px 0;align-items:flex-start;flex-direction:column;justify-content:center;gap:6px}}
+    @media(prefers-reduced-motion:no-preference){.dot{animation:pulse 2s ease-in-out infinite}@keyframes pulse{50%{opacity:.45;box-shadow:0 0 5px rgba(255,112,72,.4)}}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">CARB<span>Y</span>NE</div>
+      <div class="status"><span class="dot" aria-hidden="true"></span> Maintenance in progress</div>
+    </header>
+    <main>
+      <section class="tile hero" aria-labelledby="maintenance-title">
+        <div class="hero-content">
+          <div class="eyebrow">A quick pause. A better return.</div>
+          <h1 id="maintenance-title">We’ll be<br><span class="gradient">right back.</span></h1>
+          <p class="intro">Carbyne is currently under maintenance while we make a few improvements behind the scenes. The site will be available again shortly.</p>
+        </div>
+        <div class="hero-foot"><span class="orbit" aria-hidden="true"></span><span>Thanks for your patience while we work on things.</span></div>
+      </section>
+      <section class="tile side">
+        <div>
+          <div class="eyebrow">01 / System update</div>
+          <h2>Making things better.</h2>
+          <p>We’re tuning the experience and taking care of a few things before opening the doors again.</p>
+        </div>
+        <div class="mini-art" aria-hidden="true"><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
+      </section>
+      <section class="tile bottom">
+        <div>
+          <div class="eyebrow">02 / See you soon</div>
+          <h2>Same Carbyne. Fresh improvements.</h2>
+          <p>Your account and content aren’t going anywhere. We’ll be back as soon as maintenance is complete.</p>
+        </div>
+        <span class="arrow" aria-hidden="true">↗</span>
+      </section>
+    </main>
+    <footer><span>© <span id="year"></span> Carbyne</span><span>Built for what’s next.</span></footer>
+  </div>
+  <script>document.getElementById("year").textContent=new Date().getFullYear();</script>
+</body>
+</html>
