@@ -66,7 +66,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
-    environment: production
     steps:
       - name: Download prebuilt site
         uses: actions/download-artifact@v4
@@ -76,17 +75,14 @@ jobs:
       - name: Check deployment secrets
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
           test -n "$NETLIFY_AUTH_TOKEN" || { echo 'Missing NETLIFY_AUTH_TOKEN repository/environment secret.'; exit 1; }
-          test -n "$NETLIFY_SITE_ID" || { echo 'Missing NETLIFY_SITE_ID repository/environment secret.'; exit 1; }
       - name: Deploy already-built output (no Netlify build)
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
           npx --yes netlify-cli@latest deploy \
             --dir=dist \
             --prod \
-            --site="$NETLIFY_SITE_ID" \
+            --site="c7fad918-3ed1-43bc-81e4-8254de97bd87" \
             --message="GitHub Actions ${GITHUB_SHA}"
