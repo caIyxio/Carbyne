@@ -6,6 +6,58 @@ store_path = Path("ios/Carbyne/Sources/CarbyneStore.swift")
 content = content_path.read_text()
 store = store_path.read_text()
 
+# Ignore task cancellations instead of showing them as user-facing failures.
+error_handler = '''    func displayableError(_ error: Error) -> String? {
+        guard !Self.isCancellation(error) else { return nil }
+        return error.localizedDescription
+    }
+
+    func handleError(_ error: Error, prefix: String? = nil) {
+        guard let description = displayableError(error) else { return }
+        errorMessage = prefix.map { "\\($0) \\(description)" } ?? description
+    }
+
+    private static func isCancellation(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return true }
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? Error {
+            return isCancellation(underlying)
+        }
+        return false
+    }
+'''
+
+store_anchor = "    func restoreSession() async {"
+if store_anchor not in store:
+    raise SystemExit("CarbyneStore restoreSession insertion point not found.")
+store = store.replace(store_anchor, error_handler + store_anchor, 1)
+store = store.replace(
+    "} catch {\n            session = nil",
+    "} catch {\n            if Self.isCancellation(error) { return }\n            session = nil",
+    1
+)
+store = store.replace(
+    'errorMessage = "This account could not be loaded. Sign in again if its saved session has expired. \\(error.localizedDescription)"',
+    'handleError(error, prefix: "This account could not be loaded. Sign in again if its saved session has expired.")'
+)
+store = store.replace("errorMessage = error.localizedDescription", "handleError(error)")
+if "errorMessage = error.localizedDescription" in store:
+    raise SystemExit("Unconverted CarbyneStore error assignment remains.")
+
+# Apply the same cancellation filter to async actions launched by SwiftUI views.
+content = content.replace("store.errorMessage = error.localizedDescription", "store.handleError(error)")
+content = content.replace("transcriptionError = error.localizedDescription", "transcriptionError = store.displayableError(error)")
+
+account_sheets = account_sheets_path.read_text()
+account_sheets = account_sheets.replace("store.errorMessage = error.localizedDescription", "store.handleError(error)")
+account_sheets = account_sheets.replace("message = error.localizedDescription", "message = store.displayableError(error)")
+
+account_sheets_path.write_text(account_sheets)
+content_path.write_text(content)
+store_path.write_text(store)
+print("Applied continuous appearance-matched Home fade and ignored Swift task cancellation errors.")
+
 home_start = content.index("struct HomeScreen: View {")
 home_end = content.index("\n\nstruct SearchScreen: View {", home_start)
 home_source = content[home_start:home_end]
@@ -49,12 +101,7 @@ old_header = '''        .safeAreaInset(edge: .top, spacing: 0) {
 new_header = '''        .safeAreaInset(edge: .top, spacing: 0) {
             ZStack(alignment: .top) {
                 LinearGradient(
-                    stops: [
-                        .init(color: colorScheme == .dark ? .black : .white, location: 0.0),
-                        .init(color: colorScheme == .dark ? .black.opacity(0.78) : .white.opacity(0.78), location: 0.34),
-                        .init(color: colorScheme == .dark ? .black.opacity(0.34) : .white.opacity(0.34), location: 0.72),
-                        .init(color: colorScheme == .dark ? .black.opacity(0.0) : .white.opacity(0.0), location: 1.0)
-                    ],
+                    colors: [CarbynePalette.background, CarbynePalette.background.opacity(0)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
