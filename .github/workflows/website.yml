@@ -78,6 +78,22 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
         run: |
           test -n "$NETLIFY_AUTH_TOKEN" || { echo 'Missing NETLIFY_AUTH_TOKEN repository/environment secret.'; exit 1; }
+      - name: Diagnose Netlify site access
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          status=$(curl -sS -o "$RUNNER_TEMP/netlify-site-check.json" -w "%{http_code}" \
+            -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            -H "Accept: application/json" \
+            "https://api.netlify.com/api/v1/sites/c7fad918-3ed1-43bc-81e4-8254de97bd87")
+          echo "Netlify site API status: $status"
+          if [ "$status" = "200" ]; then
+            echo "Token can read the target site."
+          else
+            echo "Token cannot read the target site. Response:"
+            cat "$RUNNER_TEMP/netlify-site-check.json"
+            exit 1
+          fi
       - name: Deploy already-built output (no Netlify build)
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
