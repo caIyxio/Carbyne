@@ -151,6 +151,8 @@ jobs:
             }
           }
           JSON
+      - name: Fade Home header by appearance and make wordmark refresh Home
+        run: python3 .github/scripts/update-home-header-gradient-and-refresh.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
