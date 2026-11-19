@@ -7,6 +7,7 @@ on:
       - '.github/source-bundle/**'
       - 'site/**'
       - 'scripts/**'
+      - 'maintenance/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/website.yml'
@@ -15,6 +16,7 @@ on:
       - '.github/source-bundle/**'
       - 'site/**'
       - 'scripts/**'
+      - 'maintenance/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/website.yml'
@@ -49,6 +51,8 @@ jobs:
         run: npm run validate
       - name: Build static site on GitHub Actions
         run: npm run build
+      - name: Publish maintenance landing page
+        run: cp maintenance/index.html dist/index.html
       - name: Upload prebuilt site
         uses: actions/upload-artifact@v4
         with:
