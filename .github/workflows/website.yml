@@ -1,4 +1,5 @@
 name: Website — GitHub build and Netlify deploy
+# Netlify deployment workflow
 
 on:
   push:
