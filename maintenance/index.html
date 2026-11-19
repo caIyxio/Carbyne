@@ -74,6 +74,69 @@
       .top-b:before { width:42vw; }
       .footer { left:16px;right:16px;bottom:12px;font-size:10px; }
     }
+
+    /* Pattern artwork: reuse the reference's stripes, halftone dots and split fields,
+       without reproducing the Apple silhouette or placing a logo in the panels. */
+    .panel { display:block; }
+    .pattern-art { position:absolute; inset:0; width:100%; height:100%; }
+    .top-a-pattern {
+      background:
+        radial-gradient(ellipse at 12% 12%, transparent 0 24%, #c5eaff 24.2% 25%, transparent 25.2%),
+        repeating-linear-gradient(132deg, #d9f1ff 0 8px, #168fe0 8px 12px, #7969bc 12px 23px);
+      clip-path: polygon(0 0,100% 0,100% 100%,0 100%);
+    }
+    .top-a-pattern:after {
+      content:""; position:absolute; width:62%; aspect-ratio:1; right:-12%; bottom:-36%;
+      border-radius:50%; background:radial-gradient(circle, #5a3cb6 0 3px, transparent 3.5px) 0 0/15px 15px, #dff3ff;
+      box-shadow:0 0 0 18px #7969bc, 0 0 0 21px #e7f5ff;
+    }
+    .top-b-pattern {
+      background:
+        radial-gradient(ellipse at 50% 50%, transparent 0 31%, #168fe0 31.2% 31.8%, transparent 32% 39%, #6249bb 39.2% 40%, transparent 40.2%),
+        radial-gradient(circle, #168fe0 0 2.2px, transparent 2.7px) 0 0/13px 13px,
+        #e1f4ff;
+    }
+    .top-b-pattern:after {
+      content:""; position:absolute; width:56%; height:145%; right:-5%; top:-22%; border-radius:50%;
+      border:24px solid #b8e4ff; box-shadow:inset 0 0 0 12px #e1f4ff, inset 0 0 0 20px #6249bb;
+      transform:rotate(24deg);
+    }
+    .top-c-pattern {
+      background:
+        repeating-linear-gradient(45deg, transparent 0 15px, #e0f5ff 15px 20px, transparent 20px 34px),
+        linear-gradient(135deg,#18acd9,#168fe0 55%,#7969bc);
+    }
+    .top-c-pattern:after {
+      content:""; position:absolute; width:68%; aspect-ratio:1; left:-12%; top:-42%; border-radius:50%;
+      background:radial-gradient(circle,#6249bb 0 2.6px,transparent 3px) 0 0/14px 14px;
+      border:18px solid #bcecff; box-shadow:0 0 0 14px #18acd9;
+    }
+    .bottom-a-pattern {
+      background:
+        radial-gradient(circle at 50% 50%, transparent 0 22%, #e2f6ff 22.3% 23.4%, transparent 23.7% 34%, #168fe0 34.3% 35.5%, transparent 35.8%),
+        radial-gradient(circle,#6249bb 0 2.8px,transparent 3.2px) 0 0/16px 16px,
+        #65c8f4;
+    }
+    .bottom-b-pattern {
+      background:
+        repeating-linear-gradient(135deg,#b6dfff 0 7px,#6249bb 7px 12px,#7969bc 12px 23px);
+    }
+    .bottom-b-pattern:before {
+      content:""; position:absolute; width:58%; height:180%; left:22%; top:-40%; border-radius:50%;
+      background:radial-gradient(circle,#168fe0 0 2.8px,transparent 3.2px) 0 0/15px 15px,#dff3ff;
+      border:20px solid #7969bc; box-shadow:0 0 0 14px #b6dfff;
+      transform:rotate(-22deg);
+    }
+    .bottom-b-pattern:after {
+      content:""; position:absolute; inset:0 0 0 68%;
+      background:radial-gradient(circle,#583cb5 0 2.4px,transparent 2.8px) 0 0/13px 13px;
+      opacity:.9;
+    }
+    @media(max-width:700px) {
+      .top-b-pattern:after { width:70%; right:-22%; }
+      .bottom-b-pattern:before { left:5%; width:72%; }
+    }
+
     @media(prefers-reduced-motion:no-preference) {
       .top-a:after { animation:drift 10s ease-in-out infinite alternate; }
       @keyframes drift { to { transform:translate(-9px,-12px); } }
@@ -82,96 +145,11 @@
 </head>
 <body>
   <main class="mosaic" aria-label="Carbyne maintenance page">
-    <div class="panel top-a" aria-hidden="true"><svg class="apple-art" viewBox="0 0 120 120" aria-hidden="true">
-  <defs>
-    <pattern id="blueStripes" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="#dff3ff"/><rect width="4" height="10" fill="#168fe0"/></pattern>
-    <pattern id="purpleDots" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#168fe0"/><circle cx="6" cy="6" r="3.2" fill="#583cb5"/></pattern>
-    <pattern id="purpleStripes" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="#6249bb"/><rect width="4" height="10" fill="#b6dfff"/></pattern>
-    <pattern id="blueDots" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#6249bb"/><circle cx="6" cy="6" r="3.2" fill="#16a2e3"/></pattern>
-    <clipPath id="appleClip"><path d="M59 29c-8-9-22-11-34-5C8 33 8 55 17 75c8 18 21 31 34 28 5-1 7-4 12-4s8 4 14 4c13 0 25-17 29-34 5-19-3-39-18-45-12-5-23-2-29 5z"/></clipPath>
-  </defs>
-  <g clip-path="url(#appleClip)">
-    <rect x="8" y="20" width="52" height="40" class="stripe"/>
-    <rect x="60" y="20" width="54" height="40" class="dots"/>
-    <rect x="8" y="60" width="52" height="48" class="dots2"/>
-    <rect x="60" y="60" width="54" height="48" class="stripe2"/>
-    <path class="cut" d="M60 20v88M8 60h106"/>
-  </g>
-  <path class="leaf" d="M58 22C58 8 69 1 83 1 82 15 72 24 58 27z"/>
-  <path class="cut" d="M60 27v80"/>
-</svg></div>
-    <div class="panel top-b" aria-hidden="true"><svg class="apple-art" viewBox="0 0 120 120" aria-hidden="true">
-  <defs>
-    <pattern id="blueStripes" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="#dff3ff"/><rect width="4" height="10" fill="#168fe0"/></pattern>
-    <pattern id="purpleDots" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#168fe0"/><circle cx="6" cy="6" r="3.2" fill="#583cb5"/></pattern>
-    <pattern id="purpleStripes" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="#6249bb"/><rect width="4" height="10" fill="#b6dfff"/></pattern>
-    <pattern id="blueDots" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#6249bb"/><circle cx="6" cy="6" r="3.2" fill="#16a2e3"/></pattern>
-    <clipPath id="appleClip"><path d="M59 29c-8-9-22-11-34-5C8 33 8 55 17 75c8 18 21 31 34 28 5-1 7-4 12-4s8 4 14 4c13 0 25-17 29-34 5-19-3-39-18-45-12-5-23-2-29 5z"/></clipPath>
-  </defs>
-  <g clip-path="url(#appleClip)">
-    <rect x="8" y="20" width="52" height="40" class="stripe"/>
-    <rect x="60" y="20" width="54" height="40" class="dots"/>
-    <rect x="8" y="60" width="52" height="48" class="dots2"/>
-    <rect x="60" y="60" width="54" height="48" class="stripe2"/>
-    <path class="cut" d="M60 20v88M8 60h106"/>
-  </g>
-  <path class="leaf" d="M58 22C58 8 69 1 83 1 82 15 72 24 58 27z"/>
-  <path class="cut" d="M60 27v80"/>
-</svg></div>
-    <div class="panel top-c" aria-hidden="true"><svg class="apple-art" viewBox="0 0 120 120" aria-hidden="true">
-  <defs>
-    <pattern id="blueStripes" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="#dff3ff"/><rect width="4" height="10" fill="#168fe0"/></pattern>
-    <pattern id="purpleDots" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#168fe0"/><circle cx="6" cy="6" r="3.2" fill="#583cb5"/></pattern>
-    <pattern id="purpleStripes" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="#6249bb"/><rect width="4" height="10" fill="#b6dfff"/></pattern>
-    <pattern id="blueDots" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#6249bb"/><circle cx="6" cy="6" r="3.2" fill="#16a2e3"/></pattern>
-    <clipPath id="appleClip"><path d="M59 29c-8-9-22-11-34-5C8 33 8 55 17 75c8 18 21 31 34 28 5-1 7-4 12-4s8 4 14 4c13 0 25-17 29-34 5-19-3-39-18-45-12-5-23-2-29 5z"/></clipPath>
-  </defs>
-  <g clip-path="url(#appleClip)">
-    <rect x="8" y="20" width="52" height="40" class="stripe"/>
-    <rect x="60" y="20" width="54" height="40" class="dots"/>
-    <rect x="8" y="60" width="52" height="48" class="dots2"/>
-    <rect x="60" y="60" width="54" height="48" class="stripe2"/>
-    <path class="cut" d="M60 20v88M8 60h106"/>
-  </g>
-  <path class="leaf" d="M58 22C58 8 69 1 83 1 82 15 72 24 58 27z"/>
-  <path class="cut" d="M60 27v80"/>
-</svg></div>
-    <div class="panel bottom-a" aria-hidden="true"><svg class="apple-art" viewBox="0 0 120 120" aria-hidden="true">
-  <defs>
-    <pattern id="blueStripes" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="#dff3ff"/><rect width="4" height="10" fill="#168fe0"/></pattern>
-    <pattern id="purpleDots" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#168fe0"/><circle cx="6" cy="6" r="3.2" fill="#583cb5"/></pattern>
-    <pattern id="purpleStripes" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="#6249bb"/><rect width="4" height="10" fill="#b6dfff"/></pattern>
-    <pattern id="blueDots" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#6249bb"/><circle cx="6" cy="6" r="3.2" fill="#16a2e3"/></pattern>
-    <clipPath id="appleClip"><path d="M59 29c-8-9-22-11-34-5C8 33 8 55 17 75c8 18 21 31 34 28 5-1 7-4 12-4s8 4 14 4c13 0 25-17 29-34 5-19-3-39-18-45-12-5-23-2-29 5z"/></clipPath>
-  </defs>
-  <g clip-path="url(#appleClip)">
-    <rect x="8" y="20" width="52" height="40" class="stripe"/>
-    <rect x="60" y="20" width="54" height="40" class="dots"/>
-    <rect x="8" y="60" width="52" height="48" class="dots2"/>
-    <rect x="60" y="60" width="54" height="48" class="stripe2"/>
-    <path class="cut" d="M60 20v88M8 60h106"/>
-  </g>
-  <path class="leaf" d="M58 22C58 8 69 1 83 1 82 15 72 24 58 27z"/>
-  <path class="cut" d="M60 27v80"/>
-</svg></div>
-    <div class="panel bottom-b" aria-hidden="true"><svg class="apple-art" viewBox="0 0 120 120" aria-hidden="true">
-  <defs>
-    <pattern id="blueStripes" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="#dff3ff"/><rect width="4" height="10" fill="#168fe0"/></pattern>
-    <pattern id="purpleDots" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#168fe0"/><circle cx="6" cy="6" r="3.2" fill="#583cb5"/></pattern>
-    <pattern id="purpleStripes" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="#6249bb"/><rect width="4" height="10" fill="#b6dfff"/></pattern>
-    <pattern id="blueDots" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#6249bb"/><circle cx="6" cy="6" r="3.2" fill="#16a2e3"/></pattern>
-    <clipPath id="appleClip"><path d="M59 29c-8-9-22-11-34-5C8 33 8 55 17 75c8 18 21 31 34 28 5-1 7-4 12-4s8 4 14 4c13 0 25-17 29-34 5-19-3-39-18-45-12-5-23-2-29 5z"/></clipPath>
-  </defs>
-  <g clip-path="url(#appleClip)">
-    <rect x="8" y="20" width="52" height="40" class="stripe"/>
-    <rect x="60" y="20" width="54" height="40" class="dots"/>
-    <rect x="8" y="60" width="52" height="48" class="dots2"/>
-    <rect x="60" y="60" width="54" height="48" class="stripe2"/>
-    <path class="cut" d="M60 20v88M8 60h106"/>
-  </g>
-  <path class="leaf" d="M58 22C58 8 69 1 83 1 82 15 72 24 58 27z"/>
-  <path class="cut" d="M60 27v80"/>
-</svg></div>
+    <div class="panel top-a" aria-hidden="true"><div class="pattern-art top-a-pattern" aria-hidden="true"></div></div>
+    <div class="panel top-b" aria-hidden="true"><div class="pattern-art top-b-pattern" aria-hidden="true"></div></div>
+    <div class="panel top-c" aria-hidden="true"><div class="pattern-art top-c-pattern" aria-hidden="true"></div></div>
+    <div class="panel bottom-a" aria-hidden="true"><div class="pattern-art bottom-a-pattern" aria-hidden="true"></div></div>
+    <div class="panel bottom-b" aria-hidden="true"><div class="pattern-art bottom-b-pattern" aria-hidden="true"></div></div>
     <section class="hero" aria-labelledby="maintenance-title">
       <div class="eyebrow">CARBYNE · TEMPORARY MAINTENANCE</div>
       <h1 id="maintenance-title">A short pause. Back soon.</h1>
