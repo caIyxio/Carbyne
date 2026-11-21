@@ -14,7 +14,20 @@ old_symbols = """    private static let symbols = [
         "person.crop.circle"
     ]"""
 
-new_symbols = """    // SF Symbols resolve against the symbol library provided by the running OS.
+new_symbols = """    // Match the reference navigation glyphs, not merely filled variants
+    // of the previous symbols. The fifth tab is still the live account avatar.
+    private static let symbols = [
+        "house.fill",
+        "play.rectangle",
+        "paperplane",
+        "magnifyingglass",
+        "person.crop.circle"
+    ]"""
+
+if old_symbols in text:
+    text = text.replace(old_symbols, new_symbols, 1)
+else:
+    old_pair = """    // SF Symbols resolve against the symbol library provided by the running OS.
     // Use outline/filled pairs for the four action tabs. The fifth tab remains
     // the account-avatar slot and is replaced with the user's live profile image.
     private static let unselectedSymbols = [
@@ -31,26 +44,37 @@ new_symbols = """    // SF Symbols resolve against the symbol library provided b
         "paperplane.fill",
         "person.crop.circle.fill"
     ]"""
+    new_pair = """    // Match the reference navigation glyphs, not merely filled variants
+    // of the previous symbols. The fifth tab is still the live account avatar.
+    private static let symbols = [
+        "house.fill",
+        "play.rectangle",
+        "paperplane",
+        "magnifyingglass",
+        "person.crop.circle"
+    ]"""
+    if old_pair not in text:
+        raise SystemExit("Expected prior tab symbol definitions were not found; refusing to guess.")
+    text = text.replace(old_pair, new_pair, 1)
 
-if old_symbols not in text:
-    raise SystemExit("Expected original five-tab symbol array was not found; refusing to guess.")
-
-text = text.replace(old_symbols, new_symbols, 1)
-
-old_images = """                image: UIImage(systemName: Self.symbols[index]),
-                selectedImage: UIImage(systemName: Self.symbols[index])"""
-new_images = """                image: UIImage(systemName: Self.unselectedSymbols[index]),
+old_images_pair = """                image: UIImage(systemName: Self.unselectedSymbols[index]),
                 selectedImage: UIImage(systemName: Self.selectedSymbols[index])"""
+new_images_pair = """                image: UIImage(systemName: Self.symbols[index]),
+                selectedImage: UIImage(systemName: Self.symbols[index])"""
+if old_images_pair in text:
+    text = text.replace(old_images_pair, new_images_pair, 1)
 
-if old_images not in text:
-    raise SystemExit("Expected tab bar image initializer was not found; refusing to guess.")
+if "Self.symbols[index]" not in text:
+    old_images = """                image: UIImage(systemName: Self.symbols[index]),
+                selectedImage: UIImage(systemName: Self.symbols[index])"""
+    if old_images not in text:
+        raise SystemExit("Expected tab bar image initializer was not found; refusing to guess.")
 
-text = text.replace(old_images, new_images, 1)
-
-if text.count("Self.unselectedSymbols[index]") != 1 or text.count("Self.selectedSymbols[index]") != 1:
-    raise SystemExit("Tab icon update validation failed.")
-if '"person.crop.circle"' not in text or '"person.crop.circle.fill"' not in text:
-    raise SystemExit("The avatar fallback symbol must remain intact.")
+for symbol in ('"house.fill"', '"play.rectangle"', '"paperplane"', '"magnifyingglass"'):
+    if symbol not in text:
+        raise SystemExit(f"Missing expected reference symbol: {symbol}")
+if '"person.crop.circle"' not in text:
+    raise SystemExit("The profile avatar fallback must remain intact.")
 
 source.write_text(text)
-print("Updated Home, Spotlights, Upload, and DMs to SF Symbols outline/filled pairs; profile avatar slot preserved.")
+print("Applied reference glyphs: filled home, play-in-rectangle Spotlights, paper-plane DMs, magnifying-glass Search; preserved live avatar.")
