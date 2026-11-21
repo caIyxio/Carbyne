@@ -10,7 +10,7 @@ old_symbols = """    private static let symbols = [
         "house.fill",
         "movieclapper.fill",
         "plus.square.fill",
-        "paperplane.fill",
+        "bubble.left.and.bubble.right.fill",
         "person.crop.circle"
     ]"""
 
@@ -28,7 +28,7 @@ new_symbols = """    // SF Symbols resolve against the symbol library provided b
         "house.fill",
         "movieclapper.fill",
         "plus.app.fill",
-        "bubble.left.and.bubble.right.fill",
+        "paperplane.fill",
         "person.crop.circle.fill"
     ]"""
 
@@ -53,4 +53,4 @@ if '"person.crop.circle"' not in text or '"person.crop.circle.fill"' not in text
     raise SystemExit("The avatar fallback symbol must remain intact.")
 
 source.write_text(text)
-print("Updated four action tabs to SF Symbols outline/filled pairs; profile avatar slot preserved.")
+print("Updated Home, Spotlights, Upload, and DMs to SF Symbols outline/filled pairs; profile avatar slot preserved.")
