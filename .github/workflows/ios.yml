@@ -153,6 +153,8 @@ jobs:
           JSON
       - name: Fade Home header by appearance and make wordmark refresh Home
         run: python3 .github/scripts/update-home-header-gradient-and-refresh.py
+      - name: Refresh four action-tab icons with SF Symbols 7 variants and preserve the account avatar
+        run: python3 .github/scripts/refresh-sf-symbols-7-tab-icons.py
       - name: Preserve extracted SwiftUI source for implementation review
         run: tar -czf "$RUNNER_TEMP/carbyne-ios-source.tar.gz" ios/Carbyne
       - name: Upload extracted SwiftUI source
