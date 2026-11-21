@@ -7,37 +7,34 @@ if not source.is_file():
 
 text = source.read_text()
 
-# Replace SF Symbol names with custom vector artwork. These are not symbol
-# substitutions: each tab gets hand-drawn paths using Instagram-like geometry.
-# Carbyne's own tab order, color tint, destinations, and avatar stay unchanged.
-start = text.find("    private static let unselectedSymbols = [")
-if start < 0:
-    raise SystemExit("Could not find the current tab symbol arrays.")
-end_marker = "    )"
-config_start = text.find("    private static let tabSymbolConfiguration =", start)
-if config_start < 0:
-    raise SystemExit("Could not find tab symbol configuration.")
-config_end = text.find(end_marker, config_start)
-if config_end < 0:
-    raise SystemExit("Could not find end of tab symbol configuration.")
-config_end = text.find("\n", config_end) + 1
+# The source bundle may contain either the original single SF Symbol array
+# or the later selected/unselected arrays. Remove either form.
+text, count = re.subn(
+    r'    private static let unselectedSymbols = \[.*?\]\n'
+    r'    private static let selectedSymbols = \[.*?\]\n'
+    r'    private static let tabSymbolConfiguration = UIImage\.SymbolConfiguration\(.*?\n    \)\n',
+    '',
+    text,
+    count=1,
+    flags=re.S
+)
+if count == 0:
+    text, count = re.subn(r'    private static let symbols = \[.*?\]\n', '', text, count=1, flags=re.S)
+if count == 0:
+    raise SystemExit("Could not locate either supported tab symbol declaration.")
 
-text = text[:start] + text[config_end:]
-
-old_images = """                image: UIImage(
-                    systemName: Self.unselectedSymbols[index],
-                    withConfiguration: Self.tabSymbolConfiguration
-                ),
-                selectedImage: UIImage(
-                    systemName: Self.selectedSymbols[index],
-                    withConfiguration: Self.tabSymbolConfiguration
-                )"""
-new_images = """                image: CarbyneTabGlyph.image(for: index, selected: false),
-                selectedImage: CarbyneTabGlyph.image(for: index, selected: true)"""
-if old_images not in text:
-    raise SystemExit("Expected SF Symbol image initializer was not found.")
-
-text = text.replace(old_images, new_images, 1)
+# Replace only the UIImage construction for the existing tab items.
+pattern = re.compile(
+    r'image:\s*UIImage\(.*?\),\s*selectedImage:\s*UIImage\(.*?\)',
+    re.S
+)
+replacement = (
+    'image: CarbyneTabGlyph.image(for: index, selected: false),\n'
+    '                selectedImage: CarbyneTabGlyph.image(for: index, selected: true)'
+)
+text, count = pattern.subn(replacement, text, count=1)
+if count != 1:
+    raise SystemExit("Could not locate the existing tab image/selectedImage initializer.")
 
 if "enum CarbyneTabGlyph" in text:
     raise SystemExit("Custom tab glyph renderer already exists; refusing to duplicate it.")
@@ -185,13 +182,15 @@ private enum CarbyneTabGlyph {
 '''
 text = text.rstrip() + "\n" + glyph_renderer + "\n"
 
-# Validate destination order and avatar updater are untouched.
+# Validate Carbyne's existing destination order, tab labels and avatar updater.
 if ".home, .moments, .upload, .messages, .channel" not in text:
     raise SystemExit("Carbyne tab destinations/order changed unexpectedly.")
-if "updateAvatar(" not in text or 'item?.image = icon' not in text:
+if 'let titles = ["Home", "Spotlights", "Upload", "Chat", "Profile"]' not in text:
+    raise SystemExit("Carbyne tab labels changed unexpectedly.")
+if "updateAvatar(" not in text or "item?.image = icon" not in text:
     raise SystemExit("Live profile avatar updater is missing.")
 if "controller.tabBar.tintColor =" in text or "unselectedItemTintColor =" in text:
     raise SystemExit("A tab tint override was introduced; preserve Carbyne colors.")
 
 source.write_text(text)
-print("Replaced the four tab glyphs with custom Instagram-style vector artwork; retained Carbyne Home/Spotlights clapperboard/Upload/DMs/Profile order, existing colors, layout, actions, and live avatar.")
+print("Replaced SF Symbol references with custom Instagram-style vector artwork. Preserved Carbyne tab order, labels, colors, layout, actions, and live profile avatar.")
