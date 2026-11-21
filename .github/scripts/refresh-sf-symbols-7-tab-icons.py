@@ -10,7 +10,7 @@ old_symbols = """    private static let symbols = [
         "house.fill",
         "movieclapper.fill",
         "plus.square.fill",
-        "bubble.left.and.bubble.right.fill",
+        "paperplane.fill",
         "person.crop.circle"
     ]"""
 
@@ -21,7 +21,7 @@ new_symbols = """    // SF Symbols resolve against the symbol library provided b
         "house",
         "movieclapper",
         "plus.app",
-        "bubble.left.and.bubble.right",
+        "paperplane",
         "person.crop.circle"
     ]
     private static let selectedSymbols = [
